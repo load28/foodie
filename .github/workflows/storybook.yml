@@ -26,8 +26,6 @@ jobs:
 
     - name: Setup pnpm
       uses: pnpm/action-setup@v4
-      with:
-        version: 10
 
     - name: Get pnpm store directory
       shell: bash
@@ -43,7 +41,7 @@ jobs:
           ${{ runner.os }}-pnpm-store-
 
     - name: Install dependencies
-      run: pnpm install --no-frozen-lockfile
+      run: pnpm install --frozen-lockfile
 
     - name: Build Storybook
       run: pnpm run build-storybook
