@@ -1,0 +1,77 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.login-form {
+  min-height: 100vh;
+  @include flex-center;
+  padding: $spacing-lg;
+  background: linear-gradient(
+    135deg,
+    rgba($primary, 0.02) 0%,
+    rgba($secondary, 0.03) 50%,
+    rgba($accent, 0.02) 100%
+  );
+
+  &__container {
+    width: 100%;
+    background: rgba(white, 0.95);
+    border-radius: $radius-md;
+    padding: $spacing-3xl $spacing-xl;
+    border: 1px solid $gray-600;
+    backdrop-filter: blur(10px);
+    box-shadow: $shadow-lg;
+  }
+
+  &__header {
+    text-align: center;
+    margin-bottom: $spacing-4xl;
+  }
+
+  &__title {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-light;
+    color: $gray-100;
+    margin-bottom: $spacing-sm;
+    font-family: $font-family;
+  }
+
+  &__subtitle {
+    font-size: $font-size-sm;
+    color: $gray-300;
+    font-weight: $font-weight-regular;
+    font-family: $font-family;
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__fields {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: $spacing-2xl;
+  }
+
+  &__error {
+    background: $gray-800;
+    color: $gray-200;
+    padding: $spacing-lg;
+    border-radius: $radius-md;
+    font-size: $font-size-base;
+    text-align: center;
+    margin-bottom: $spacing-xl;
+    border: 1px solid $gray-600;
+    font-weight: $font-weight-regular;
+    font-family: $font-family;
+    line-height: $line-height-relaxed;
+  }
+}
+
+// Full width button for mobile
+.login-form .ds-button {
+  width: 100%;
+  padding: $spacing-lg;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+}

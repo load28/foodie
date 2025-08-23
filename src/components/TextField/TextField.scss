@@ -1,0 +1,85 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ds-text-field {
+  @include input-base;
+  width: 100%;
+
+  // Underline variant (default)
+  &--underline {
+    padding: $spacing-md 0;
+    border: none;
+    border-bottom: 1px solid $gray-600;
+    border-radius: 0;
+    background: transparent;
+
+    &:focus {
+      @include focus-state($primary);
+      border-bottom-color: $primary;
+    }
+  }
+
+  // Bordered variant (login style)
+  &--bordered {
+    padding: $font-size-base $spacing-lg;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: $radius-lg;
+    background: rgba(255, 255, 255, 0.8);
+
+    &:focus {
+      border-color: rgba($primary, 0.3);
+      background: rgba(255, 255, 255, 0.95);
+    }
+  }
+
+  // States
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--error {
+    &.ds-text-field--underline {
+      border-bottom-color: #e74c3c;
+    }
+
+    &.ds-text-field--bordered {
+      border-color: rgba(#e74c3c, 0.3);
+    }
+  }
+}
+
+.ds-text-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xl;
+}
+
+.ds-text-field-label {
+  font-size: 13px;
+  color: $gray-300;
+  font-weight: $font-weight-regular;
+}
+
+.ds-text-field-message {
+  font-size: $font-size-sm;
+  min-height: 20px; // Reserve space for message
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  margin-top: $spacing-xs;
+  
+  &--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.ds-text-field-error {
+  color: #e74c3c;
+}
+
+.ds-text-field-help {
+  color: $gray-400;
+}

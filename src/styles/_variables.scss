@@ -1,0 +1,88 @@
+// Brand Colors
+$primary: #c4a882;
+$secondary: #d6c19a;
+$accent: #e8d4b0;
+
+// Gray Palette
+$gray-100: #1a1a1a;
+$gray-200: #2c2c2c;
+$gray-300: #666;
+$gray-400: #999;
+$gray-500: #bbb;
+$gray-600: #e8e8e8;
+$gray-700: #f0f0f0;
+$gray-800: #f5f5f5;
+$gray-900: #fbfbfb;
+$gray-950: #fefefe;
+
+// Red Palette
+$red-100: #8b5a5a;
+$red-200: #d9b3b3;
+$red-300: #f5e6e6;
+$red-400: #faf5f5;
+
+// Green Palette
+$green-100: #5a7a5a;
+$green-200: #a3c4a3;
+$green-300: #e8f5e8;
+$green-400: #f5faf5;
+
+// Typography
+$font-family: 'Segoe UI', Roboto, sans-serif;
+
+// Font Sizes
+$font-size-xs: 11px;
+$font-size-sm: 12px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 22px;
+$font-size-2xl: 28px;
+$font-size-3xl: 36px;
+$font-size-4xl: 48px;
+
+// Font Weights
+$font-weight-light: 300;
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Line Heights
+$line-height-tight: 1.3;
+$line-height-normal: 1.4;
+$line-height-relaxed: 1.5;
+$line-height-loose: 1.6;
+$line-height-extra-loose: 1.7;
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 24px;
+$spacing-2xl: 32px;
+$spacing-3xl: 40px;
+$spacing-4xl: 60px;
+$spacing-5xl: 80px;
+
+// Border Radius
+$radius-sm: 6px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-full: 50%;
+
+// Transitions
+$transition-fast: all 0.2s ease;
+$transition-base: all 0.3s ease;
+
+// Shadows
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.08);
+
+// Breakpoints
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;

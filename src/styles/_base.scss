@@ -1,0 +1,76 @@
+@use 'variables' as *;
+
+// Reset
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// Base Typography
+body {
+  font-family: $font-family;
+  background: $gray-950;
+  color: $gray-200;
+  line-height: $line-height-extra-loose;
+  letter-spacing: -0.02em;
+  overflow-x: hidden;
+}
+
+// Headings
+h1, h2, h3, h4, h5, h6 {
+  font-family: $font-family;
+  color: $gray-100;
+  line-height: $line-height-normal;
+}
+
+h1 {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-light;
+  line-height: $line-height-tight;
+}
+
+h2 {
+  font-size: $font-size-2xl;
+  font-weight: $font-weight-regular;
+}
+
+h3 {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
+}
+
+// Links
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: $transition-fast;
+  
+  &:hover {
+    color: $primary;
+  }
+}
+
+// Images
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Lists
+ul, ol {
+  list-style: none;
+}
+
+// Forms
+button, input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+// Focus styles
+:focus-visible {
+  outline: 2px solid rgba($primary, 0.3);
+  outline-offset: 2px;
+}

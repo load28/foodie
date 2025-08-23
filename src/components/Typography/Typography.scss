@@ -1,0 +1,226 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.typography-showcase {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-3xl;
+}
+
+.typography-header {
+  text-align: center;
+  margin-bottom: $spacing-5xl;
+}
+
+.typography-title {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-light;
+  color: $gray-100;
+  margin-bottom: $spacing-lg;
+  letter-spacing: -0.03em;
+}
+
+.typography-description {
+  font-size: $font-size-md;
+  color: $gray-300;
+  font-weight: $font-weight-regular;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: $line-height-relaxed;
+}
+
+.typography-section {
+  margin-bottom: $spacing-5xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.typography-section__title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
+  color: $gray-100;
+  margin-bottom: $spacing-2xl;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $gray-700;
+}
+
+// Font Families
+.font-families {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: $spacing-xl;
+}
+
+.font-family-sample {
+  background: white;
+  border: 1px solid $gray-800;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+}
+
+.font-family-sample__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: $spacing-sm;
+}
+
+.font-family-sample__name {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-medium;
+  color: $gray-100;
+}
+
+.font-family-sample__family {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: $gray-900;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.font-family-sample__description {
+  font-size: $font-size-sm;
+  color: $gray-300;
+  margin-bottom: $spacing-lg;
+  line-height: $line-height-relaxed;
+}
+
+.font-family-sample__text {
+  font-size: $font-size-lg;
+  color: $gray-200;
+  line-height: $line-height-relaxed;
+  padding: $spacing-lg;
+  background: $gray-900;
+  border-radius: $radius-md;
+}
+
+// Typography Samples
+.typography-samples {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-2xl;
+}
+
+.typography-sample {
+  background: white;
+  border: 1px solid $gray-800;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+}
+
+.typography-sample__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $gray-800;
+}
+
+.typography-sample__label {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $gray-100;
+}
+
+.typography-sample__specs {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: $gray-900;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+}
+
+.typography-sample__text {
+  &.heading-1 {
+    font-size: $font-size-3xl;
+    font-weight: $font-weight-light;
+    color: $gray-100;
+    line-height: $line-height-tight;
+  }
+
+  &.heading-2 {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-regular;
+    color: $gray-100;
+    line-height: $line-height-normal;
+  }
+
+  &.heading-3 {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-medium;
+    color: $gray-100;
+    line-height: $line-height-normal;
+  }
+
+  &.body-1 {
+    font-size: $font-size-md;
+    font-weight: $font-weight-regular;
+    color: $gray-200;
+    line-height: $line-height-extra-loose;
+  }
+
+  &.body-2 {
+    font-size: $font-size-base;
+    font-weight: $font-weight-regular;
+    color: $gray-300;
+    line-height: $line-height-loose;
+  }
+
+  &.caption {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-light;
+    color: $gray-400;
+    line-height: $line-height-relaxed;
+  }
+}
+
+// Font Weights
+.font-weights {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.font-weight-sample {
+  font-size: $font-size-lg;
+  color: $gray-200;
+  padding: $spacing-lg;
+  background: white;
+  border: 1px solid $gray-800;
+  border-radius: $radius-lg;
+  line-height: $line-height-relaxed;
+}
+
+// 반응형
+@include mobile {
+  .typography-showcase {
+    padding: $spacing-2xl;
+  }
+  
+  .font-families {
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+  }
+  
+  .typography-title {
+    font-size: $font-size-2xl;
+  }
+  
+  .typography-sample__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+  
+  .font-family-sample__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-xs;
+  }
+}

@@ -1,0 +1,123 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-avatar {
+  border-radius: $radius-full;
+  background: linear-gradient(135deg, $primary, $secondary);
+  @include flex-center;
+  color: white;
+  font-weight: $font-weight-medium;
+  font-family: $font-family;
+  position: relative;
+  overflow: hidden;
+  
+  // Default size (medium)
+  width: 36px;
+  height: 36px;
+  font-size: $font-size-base;
+  
+  // Sizes
+  &--small {
+    width: 24px;
+    height: 24px;
+    font-size: $font-size-sm;
+  }
+  
+  &--large {
+    width: 48px;
+    height: 48px;
+    font-size: $font-size-lg;
+  }
+  
+  &--xl {
+    width: 64px;
+    height: 64px;
+    font-size: $font-size-xl;
+  }
+  
+  // Image avatar
+  &__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: $radius-full;
+  }
+  
+  // Status indicator
+  &__status {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: $radius-full;
+    border: 2px solid white;
+    
+    &--online {
+      background: #27ae60;
+    }
+    
+    &--away {
+      background: #f39c12;
+    }
+    
+    &--offline {
+      background: #95a5a6;
+    }
+  }
+  
+  // Color variants
+  &--primary {
+    background: linear-gradient(135deg, $primary, darken($primary, 10%));
+  }
+  
+  &--secondary {
+    background: linear-gradient(135deg, $secondary, darken($secondary, 10%));
+  }
+  
+  &--accent {
+    background: linear-gradient(135deg, $accent, darken($accent, 15%));
+    color: $gray-200;
+  }
+  
+  &--gray {
+    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+  }
+  
+  // Interactive
+  &--clickable {
+    cursor: pointer;
+    transition: $transition-fast;
+    
+    &:hover {
+      transform: scale(1.05);
+      box-shadow: $shadow-md;
+    }
+  }
+  
+  // Group avatars
+  &-group {
+    display: flex;
+    
+    .ds-avatar {
+      margin-left: -8px;
+      border: 2px solid white;
+      
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+    
+    &--small {
+      .ds-avatar {
+        margin-left: -6px;
+      }
+    }
+    
+    &--large {
+      .ds-avatar {
+        margin-left: -12px;
+      }
+    }
+  }
+}

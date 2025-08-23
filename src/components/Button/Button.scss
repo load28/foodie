@@ -1,0 +1,60 @@
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ds-button {
+  @include button-base;
+  padding: $spacing-md $spacing-xl;
+  font-size: $font-size-base;
+
+  // Variants
+  &--primary {
+    background: $primary;
+    color: white;
+
+    &:hover {
+      background: darken($primary, 8%);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  &--secondary {
+    background: transparent;
+    color: $primary;
+    border: 1px solid $primary;
+    padding: 11px 23px; // Adjust for border
+
+    &:hover {
+      background: $primary;
+      color: white;
+    }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: $gray-300;
+
+    &:hover {
+      background: rgba($gray-300, 0.05);
+      color: $gray-200;
+    }
+  }
+
+  // Sizes
+  &--small {
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-sm;
+  }
+
+  // States
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

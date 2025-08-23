@@ -1,0 +1,144 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.colors-showcase {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: $spacing-3xl;
+}
+
+.colors-header {
+  text-align: center;
+  margin-bottom: $spacing-5xl;
+}
+
+.colors-title {
+  font-size: $font-size-3xl;
+  font-weight: $font-weight-light;
+  color: $gray-100;
+  margin-bottom: $spacing-lg;
+  letter-spacing: -0.03em;
+}
+
+.colors-description {
+  font-size: $font-size-md;
+  color: $gray-300;
+  font-weight: $font-weight-regular;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: $line-height-relaxed;
+}
+
+.color-group {
+  margin-bottom: $spacing-5xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.color-group__title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-medium;
+  color: $gray-100;
+  margin-bottom: $spacing-2xl;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid $gray-700;
+}
+
+.color-group__swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: $spacing-xl;
+}
+
+.color-swatch {
+  background: white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  border: 1px solid $gray-800;
+  cursor: pointer;
+  transition: $transition-fast;
+  position: relative;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+    border-color: $gray-600;
+  }
+}
+
+.color-swatch__color {
+  width: 100%;
+  height: 80px;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-lg;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.color-swatch__info {
+  text-align: center;
+}
+
+.color-swatch__name {
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  color: $gray-200;
+  margin-bottom: $spacing-xs;
+}
+
+.color-swatch__hex {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  color: $gray-300;
+  margin-bottom: $spacing-xs;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  background: $gray-900;
+  padding: $spacing-xs $spacing-sm;
+  border-radius: $radius-sm;
+  display: inline-block;
+}
+
+.color-swatch__var {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  margin-bottom: $spacing-sm;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.color-swatch__description {
+  font-size: $font-size-sm;
+  color: $gray-400;
+  line-height: $line-height-relaxed;
+}
+
+.color-swatch__copied {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: $spacing-sm $spacing-lg;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+  pointer-events: none;
+  z-index: 10;
+}
+
+// 반응형
+@include mobile {
+  .colors-showcase {
+    padding: $spacing-2xl;
+  }
+  
+  .color-group__swatches {
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+  }
+  
+  .colors-title {
+    font-size: $font-size-2xl;
+  }
+}

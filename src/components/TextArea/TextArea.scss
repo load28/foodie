@@ -1,0 +1,105 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-text-area {
+  @include input-base;
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: $font-size-base $spacing-lg;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: $radius-lg;
+  background: rgba(255, 255, 255, 0.8);
+  line-height: $line-height-loose;
+  font-family: $font-family;
+  
+  &:focus {
+    border-color: rgba($primary, 0.3);
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  &::placeholder {
+    line-height: $line-height-loose;
+  }
+  
+  // Sizes
+  &--small {
+    min-height: 80px;
+    padding: $spacing-md;
+  }
+  
+  &--large {
+    min-height: 160px;
+    padding: $spacing-lg $spacing-xl;
+  }
+  
+  // States
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &--error {
+    border-color: rgba(#e74c3c, 0.3);
+  }
+  
+  &--success {
+    border-color: rgba(#27ae60, 0.3);
+  }
+  
+  // Character count
+  &-wrapper {
+    position: relative;
+  }
+  
+  &-count {
+    position: absolute;
+    bottom: $spacing-sm;
+    right: $spacing-md;
+    font-size: $font-size-sm;
+    color: $gray-400;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2px $spacing-xs;
+    border-radius: $spacing-xs;
+    
+    &--error {
+      color: #e74c3c;
+    }
+  }
+}
+
+.ds-text-area-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-xl;
+}
+
+.ds-text-area-label {
+  font-size: 13px;
+  color: $gray-300;
+  font-weight: $font-weight-regular;
+}
+
+.ds-text-area-message {
+  font-size: $font-size-sm;
+  min-height: 20px; // Reserve space for message
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  margin-top: $spacing-xs;
+  
+  &--visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.ds-text-area-error {
+  color: #e74c3c;
+}
+
+.ds-text-area-help {
+  color: $gray-400;
+}

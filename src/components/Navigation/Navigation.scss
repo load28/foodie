@@ -1,0 +1,96 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-navigation {
+  display: flex;
+  gap: $spacing-2xl;
+  
+  &__item {
+    color: $gray-300;
+    text-decoration: none;
+    font-size: $font-size-base;
+    font-weight: $font-weight-regular;
+    padding: $spacing-sm 0;
+    border-bottom: 2px solid transparent;
+    transition: $transition-fast;
+    position: relative;
+    
+    &:hover,
+    &--active {
+      color: $primary;
+      border-bottom-color: $primary;
+    }
+    
+    &--disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      
+      &:hover {
+        color: $gray-300;
+        border-bottom-color: transparent;
+      }
+    }
+  }
+  
+  // Vertical variant
+  &--vertical {
+    flex-direction: column;
+    gap: $spacing-lg;
+    
+    .ds-navigation__item {
+      padding: $spacing-md 0;
+      border-bottom: none;
+      border-left: 3px solid transparent;
+      padding-left: $spacing-lg;
+      
+      &:hover,
+      &--active {
+        border-left-color: $primary;
+        border-bottom-color: transparent;
+      }
+    }
+  }
+  
+  // Pills variant
+  &--pills {
+    gap: $spacing-sm;
+    
+    .ds-navigation__item {
+      padding: $spacing-sm $spacing-lg;
+      border-radius: $radius-sm;
+      border-bottom: none;
+      background: transparent;
+      
+      &:hover {
+        background: rgba($primary, 0.1);
+        border-bottom-color: transparent;
+      }
+      
+      &--active {
+        background: $primary;
+        color: white;
+        border-bottom-color: transparent;
+      }
+    }
+  }
+  
+  // Responsive
+  @include mobile {
+    flex-direction: column;
+    gap: $spacing-lg;
+    
+    &--vertical {
+      .ds-navigation__item {
+        padding-left: 0;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        
+        &:hover,
+        &--active {
+          border-left-color: transparent;
+          border-bottom-color: $primary;
+        }
+      }
+    }
+  }
+}

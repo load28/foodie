@@ -1,0 +1,104 @@
+@use 'variables' as *;
+
+// Responsive Breakpoints
+@mixin mobile {
+  @media (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (min-width: #{$breakpoint-md}) and (max-width: #{$breakpoint-lg - 1px}) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: #{$breakpoint-lg}) {
+    @content;
+  }
+}
+
+// Button Base
+@mixin button-base {
+  border: none;
+  border-radius: $radius-sm;
+  cursor: pointer;
+  transition: $transition-fast;
+  font-weight: $font-weight-regular;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $font-family;
+}
+
+// Text Ellipsis
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// Card Base
+@mixin card-base {
+  background: white;
+  border: 1px solid $gray-700;
+  border-radius: $radius-md;
+}
+
+// Focus State
+@mixin focus-state($color: $primary) {
+  &:focus {
+    outline: none;
+    border-color: rgba($color, 0.3);
+  }
+}
+
+// Input Base
+@mixin input-base {
+  font-family: $font-family;
+  font-size: $font-size-base;
+  font-weight: $font-weight-light;
+  color: $gray-200;
+  transition: $transition-base;
+  
+  &::placeholder {
+    color: $gray-500;
+    font-weight: $font-weight-light;
+    font-style: normal;
+    font-size: $font-size-base;
+  }
+  
+  &:focus {
+    outline: none;
+    color: $gray-100;
+    font-weight: $font-weight-regular;
+  }
+}
+
+// Flex Center
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// Aspect Ratio
+@mixin aspect-ratio($width, $height) {
+  position: relative;
+  
+  &:before {
+    display: block;
+    content: "";
+    padding-top: ($height / $width) * 100%;
+  }
+  
+  > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+}
