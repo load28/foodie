@@ -1,5 +1,6 @@
 @use "../../styles/variables" as *;
 @use "../../styles/mixins" as *;
+@use "sass:color";
 
 .ds-button {
   @include button-base;
@@ -12,7 +13,7 @@
     color: white;
 
     &:hover {
-      background: darken($primary, 8%);
+      background: color.adjust($primary, $lightness: -8%);
     }
 
     &:active {

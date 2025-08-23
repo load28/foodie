@@ -1,5 +1,6 @@
 @use '../../styles/variables' as *;
 @use '../../styles/mixins' as *;
+@use 'sass:color';
 
 .ds-avatar {
   border-radius: $radius-full;
@@ -68,15 +69,15 @@
   
   // Color variants
   &--primary {
-    background: linear-gradient(135deg, $primary, darken($primary, 10%));
+    background: linear-gradient(135deg, $primary, color.adjust($primary, $lightness: -10%));
   }
   
   &--secondary {
-    background: linear-gradient(135deg, $secondary, darken($secondary, 10%));
+    background: linear-gradient(135deg, $secondary, color.adjust($secondary, $lightness: -10%));
   }
   
   &--accent {
-    background: linear-gradient(135deg, $accent, darken($accent, 15%));
+    background: linear-gradient(135deg, $accent, color.adjust($accent, $lightness: -15%));
     color: $gray-200;
   }
   
