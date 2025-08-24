@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { Heart, MessageCircle, Share } from 'lucide-react';
 import Avatar from '../Avatar/Avatar';
 import './FeedCard.scss';
@@ -11,16 +11,20 @@ interface FeedCardProps {
   content?: string;
   location?: string;
   showRating?: boolean;
-  rating?: number;
+  rating?: number | string;
   likes?: number;
   comments?: number;
   onLike?: () => void;
   onComment?: () => void;
   onShare?: () => void;
   isLiked?: boolean;
+  tags?: string[];
+  category?: string;
+  image?: string;
+  variant?: 'default' | 'detailed';
 }
 
-const FeedCard: React.FC<FeedCardProps> = ({ 
+const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({ 
   authorName = '작성자',
   authorInitial = '작',
   timeAgo = '방금 전',
@@ -35,13 +39,22 @@ const FeedCard: React.FC<FeedCardProps> = ({
   onComment,
   onShare,
   isLiked = false,
+  tags = [],
+  category,
+  image,
+  variant = 'default',
   ...props 
-}) => {
+}, ref) => {
+  const ratingValue = typeof rating === 'string' ? parseFloat(rating) : rating;
   return (
-    <div className="ds-feed-card ds-feed-card--compact" {...props}>
+    <div 
+      ref={ref}
+      className={`ds-feed-card ${variant === 'detailed' ? 'ds-feed-card--detailed' : 'ds-feed-card--compact'}`} 
+      {...props}
+    >
       <div className="ds-feed-card__header">
         <Avatar 
-          size="small" 
+          size="medium" 
           color="secondary" 
           className="ds-feed-card__avatar"
         >
@@ -57,16 +70,45 @@ const FeedCard: React.FC<FeedCardProps> = ({
         <h3 className="ds-feed-card__title">{title}</h3>
         <p className="ds-feed-card__text">{content}</p>
         
-        {showRating && (
-          <div className="ds-rating">
-            <div className="ds-rating__stars">
-              {'⭐'.repeat(Math.floor(rating))}
+        {(showRating || variant === 'detailed') && (
+          <div className="ds-feed-card__meta">
+            <div className="ds-feed-card__rating">
+              <span className="ds-feed-card__stars">
+                {'★'.repeat(Math.floor(ratingValue))}
+                {'☆'.repeat(5 - Math.floor(ratingValue))}
+              </span>
+              <span className="ds-feed-card__rating-value">{rating}</span>
             </div>
-            <div className="ds-rating__score">{rating}</div>
+            <div className="ds-feed-card__location">
+              📍 {location}
+            </div>
+          </div>
+        )}
+
+        {!showRating && variant === 'default' && (
+          <div className="ds-feed-card__location">📍 {location}</div>
+        )}
+        
+        {variant === 'detailed' && (tags.length > 0 || category) && (
+          <div className="ds-feed-card__tags">
+            {category && (
+              <span className="ds-feed-card__tag ds-feed-card__tag--primary">
+                #{category}
+              </span>
+            )}
+            {tags.map((tag, index) => (
+              <span key={index} className="ds-feed-card__tag">
+                #{tag}
+              </span>
+            ))}
           </div>
         )}
         
-        <div className="ds-feed-card__location">📍 {location}</div>
+        {variant === 'detailed' && image && (
+          <div className="ds-feed-card__image">
+            {image}
+          </div>
+        )}
       </div>
       
       <div className="ds-feed-card__actions">
@@ -93,6 +135,8 @@ const FeedCard: React.FC<FeedCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+FeedCard.displayName = 'FeedCard';
 
 export default FeedCard;

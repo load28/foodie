@@ -88,12 +88,6 @@
   // Interactive
   &--clickable {
     cursor: pointer;
-    transition: $transition-fast;
-    
-    &:hover {
-      transform: scale(1.05);
-      box-shadow: $shadow-md;
-    }
   }
   
   // Group avatars

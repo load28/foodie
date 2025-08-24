@@ -58,14 +58,7 @@
   padding: $spacing-lg;
   border: 1px solid $gray-800;
   cursor: pointer;
-  transition: $transition-fast;
   position: relative;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: $shadow-md;
-    border-color: $gray-600;
-  }
 }
 
 .color-swatch__color {

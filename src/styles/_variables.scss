@@ -27,6 +27,15 @@ $green-200: #a3c4a3;
 $green-300: #e8f5e8;
 $green-400: #f5faf5;
 
+// Yellow Palette
+$yellow-100: #d4af37;
+$yellow-200: #e6c757;
+$yellow-300: #f8f6f0;
+
+// Additional Gray Shades
+$gray-50: #555;
+$gray-75: #8b6914;
+
 // Typography
 $font-family: 'Segoe UI', Roboto, sans-serif;
 
@@ -67,9 +76,14 @@ $spacing-4xl: 60px;
 $spacing-5xl: 80px;
 
 // Border Radius
+$radius-xs: 4px;
 $radius-sm: 6px;
 $radius-md: 8px;
 $radius-lg: 12px;
+$radius-xl: 14px;
+$radius-2xl: 16px;
+$radius-3xl: 20px;
+$radius-4xl: 24px;
 $radius-full: 50%;
 
 // Transitions
@@ -80,6 +94,8 @@ $transition-base: all 0.3s ease;
 $shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
 $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
 $shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.08);
+$shadow-xl: 0 -4px 20px rgba(0, 0, 0, 0.15);
+$shadow-2xl: 0 2px 4px rgba(107, 114, 128, 0.15);
 
 // Breakpoints
 $breakpoint-sm: 576px;

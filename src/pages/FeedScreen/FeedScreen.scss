@@ -1,0 +1,123 @@
+@use 'sass:color';
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-feed-screen {
+  min-height: 100vh;
+  background: $gray-950;
+  font-family: $font-family;
+
+  &__header {
+    position: sticky;
+    top: 0;
+    background: rgba(254, 254, 254, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid $gray-800;
+    padding: $spacing-lg $spacing-xl;
+    z-index: 50;
+  }
+
+  &__header-inner {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__logo {
+    font-size: calc($font-size-4xl / 2);
+    font-weight: $font-weight-medium;
+    color: $primary;
+    text-decoration: none;
+  }
+
+  &__header-actions {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+  }
+
+  &__header-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    border-radius: $radius-full;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: $gray-300;
+  }
+
+  &__container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: $spacing-xl $spacing-xl;
+  }
+
+  &__filters {
+    display: flex;
+    gap: $spacing-sm;
+    margin-bottom: $spacing-xl;
+    overflow-x: auto;
+    padding-bottom: $spacing-sm;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__filter {
+    background: white;
+    border: 1px solid $gray-700;
+    border-radius: $radius-4xl;
+    padding: $spacing-sm $spacing-lg;
+    font-size: $font-size-sm + 1px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: $gray-300;
+
+    &--active {
+      background: $primary;
+      color: white;
+      border-color: $primary;
+    }
+  }
+
+  &__feed {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__loading {
+    text-align: center;
+    padding: 10px;
+    color: #ccc;
+    font-size: $font-size-sm;
+  }
+
+  &__spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid $primary;
+    border-radius: $radius-full;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+  }
+
+  &__end {
+    text-align: center;
+    padding: $spacing-xl;
+    color: $gray-400;
+    font-size: $font-size-base;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

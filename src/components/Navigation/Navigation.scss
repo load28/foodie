@@ -15,7 +15,6 @@
     transition: $transition-fast;
     position: relative;
     
-    &:hover,
     &--active {
       color: $primary;
       border-bottom-color: $primary;
@@ -24,11 +23,6 @@
     &--disabled {
       opacity: 0.5;
       cursor: not-allowed;
-      
-      &:hover {
-        color: $gray-300;
-        border-bottom-color: transparent;
-      }
     }
   }
   
@@ -43,7 +37,6 @@
       border-left: 3px solid transparent;
       padding-left: $spacing-lg;
       
-      &:hover,
       &--active {
         border-left-color: $primary;
         border-bottom-color: transparent;
@@ -61,10 +54,6 @@
       border-bottom: none;
       background: transparent;
       
-      &:hover {
-        background: rgba($primary, 0.1);
-        border-bottom-color: transparent;
-      }
       
       &--active {
         background: $primary;
@@ -85,7 +74,6 @@
         border-left: none;
         border-bottom: 2px solid transparent;
         
-        &:hover,
         &--active {
           border-left-color: transparent;
           border-bottom-color: $primary;

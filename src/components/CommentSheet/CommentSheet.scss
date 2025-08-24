@@ -1,0 +1,273 @@
+@use "sass:color";
+@use "../../styles/variables" as *;
+@use "../../styles/mixins" as *;
+
+.ds-comment-sheet {
+  width: 100%;
+  max-width: 600px;
+  background: white;
+  border-radius: $radius-3xl $radius-3xl 0 0;
+  display: flex;
+  flex-direction: column;
+  transition: height 0.3s ease-out;
+  box-shadow: $shadow-xl;
+  position: relative;
+
+  &__overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: auto;
+  }
+
+  &--dragging {
+    transition: none;
+  }
+
+  &__handle {
+    width: 40px;
+    height: 6px;
+    background: #d0d0d0;
+    border-radius: 3px;
+    margin: $spacing-md auto;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  &__header {
+    padding: $spacing-xs $spacing-xl $spacing-lg;
+    border-bottom: 1px solid $gray-700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    touch-action: none;
+    user-select: none;
+  }
+
+  &__title {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-medium;
+    color: $gray-100;
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    color: $gray-400;
+    cursor: pointer;
+    padding: $spacing-xs;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: $spacing-lg $spacing-xl;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__empty {
+    text-align: center;
+    color: $gray-400;
+    padding: $spacing-3xl $spacing-xl;
+    font-size: $font-size-base;
+  }
+
+  &__comments {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-lg;
+  }
+
+  &__input-area {
+    padding: $spacing-lg $spacing-xl;
+    border-top: 1px solid $gray-700;
+    background: white;
+    flex-shrink: 0;
+    border-radius: 0 0 $radius-3xl $radius-3xl;
+  }
+
+  &__reply-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-sm $spacing-md;
+    background: #f8f9fa;
+    border-radius: $radius-md;
+    margin-bottom: $spacing-md;
+    border: 1px solid $gray-600;
+  }
+
+  &__reply-text {
+    font-size: $font-size-sm + 1px;
+    color: $gray-300;
+  }
+
+  &__reply-target {
+    color: $primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &__reply-cancel {
+    background: none;
+    border: none;
+    color: $gray-400;
+    font-size: $font-size-lg;
+    cursor: pointer;
+    padding: $spacing-xs;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  &__input-wrapper {
+    display: flex;
+    gap: $spacing-md;
+    align-items: center;
+  }
+
+  &__input-group {
+    flex: 1;
+    display: flex;
+    gap: $spacing-sm;
+    align-items: center;
+  }
+
+  &__input {
+    @include input-base;
+    flex: 1;
+    padding: $font-size-base $spacing-lg;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: $radius-4xl;
+    background: rgba(255, 255, 255, 0.8);
+    outline: none;
+    height: 40px;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+
+    &:focus {
+      border-color: rgba($primary, 0.3);
+      background: rgba(255, 255, 255, 0.95);
+    }
+  }
+
+  &__send {
+    background: $gray-700;
+    border: none;
+    border-radius: $radius-full;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $gray-400;
+    cursor: not-allowed;
+
+    &--active {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+      cursor: pointer;
+      box-shadow: $shadow-2xl;
+    }
+  }
+}
+
+.ds-comment {
+  display: flex;
+  gap: $spacing-sm;
+  position: relative;
+  margin-bottom: $spacing-lg;
+
+  &--reply {
+    margin-left: $spacing-xl + $spacing-md;
+    margin-bottom: $spacing-md;
+  }
+
+  &__reply-line {
+    position: absolute;
+    left: -$spacing-lg;
+    top: $spacing-md;
+    width: $spacing-md;
+    height: 2px;
+    background: $gray-600;
+    border-radius: 1px;
+  }
+
+  &__avatar {
+    flex-shrink: 0;
+  }
+
+  &__content-wrapper {
+    flex: 1;
+  }
+
+  &__author {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $gray-100;
+    margin-bottom: $spacing-xs;
+  }
+
+  &__content {
+    font-size: $font-size-base;
+    color: $gray-200;
+    line-height: $line-height-relaxed;
+    margin-bottom: $spacing-sm;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+  }
+
+  &__reply-btn {
+    background: none;
+    border: none;
+    color: $gray-400;
+    font-size: $font-size-xs;
+    cursor: pointer;
+    font-weight: $font-weight-medium;
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-xs;
+    min-height: 44px;
+
+    &--active {
+      color: $primary;
+      font-weight: $font-weight-semibold;
+    }
+  }
+
+  &__time {
+    font-size: $font-size-xs;
+    color: $gray-400;
+  }
+
+  // Reply 스타일 조정
+  &--reply {
+    .ds-comment__author {
+      font-size: $font-size-sm;
+      color: $gray-200;
+    }
+
+    .ds-comment__content {
+      font-size: $font-size-sm + 1px;
+      color: $gray-300;
+    }
+  }
+}

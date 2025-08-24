@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import TextField from '../TextField/TextField';
-import Button from '../Button/Button';
+import TextField from '../../components/TextField/TextField';
+import Button from '../../components/Button/Button';
 import './LoginForm.scss';
 
 interface LoginFormProps {

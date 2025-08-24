@@ -55,21 +55,69 @@
     margin-bottom: $spacing-md;
   }
   
-  &__location {
-    font-size: $font-size-sm;
-    color: $primary;
-    font-family: $font-family;
+  &__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  &__rating {
     display: flex;
     align-items: center;
     gap: $spacing-xs;
   }
+
+  &__stars {
+    color: $yellow-100;
+    font-size: $font-size-base;
+  }
+
+  &__rating-value {
+    font-size: $font-size-sm;
+    color: $gray-300;
+    margin-left: $spacing-xs;
+  }
+
+  &__location {
+    font-size: $font-size-sm;
+    color: $gray-400;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-sm - 2px;
+    margin-bottom: $spacing-md;
+  }
+
+  &__tag {
+    background: $yellow-300;
+    color: $gray-75;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-regular;
+    padding: 3px 10px;
+    border-radius: $radius-lg;
+    border: 1px solid #e8d4b0;
+
+    &--primary {
+      font-weight: $font-weight-medium;
+    }
+  }
   
   &__image {
     width: 100%;
-    max-height: 300px;
-    object-fit: cover;
+    height: 160px;
+    background: linear-gradient(135deg, $yellow-300, #f0ede5);
     border-radius: $radius-md;
-    margin: $spacing-lg 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-4xl;
+    margin: $spacing-md 0;
   }
   
   &__actions {
@@ -84,29 +132,39 @@
     border: none;
     color: $gray-400;
     cursor: pointer;
-    font-size: 18px;
-    padding: $spacing-sm;
-    border-radius: $radius-sm;
-    transition: $transition-fast;
     display: flex;
     align-items: center;
-    gap: $spacing-xs;
-    
-    &:hover {
-      color: $primary;
-      background: rgba($primary, 0.05);
-    }
+    gap: $spacing-sm - 2px;
+    padding: $spacing-sm;
+    border-radius: $radius-sm;
+    font-size: $font-size-base;
+    min-height: 44px;
+    min-width: 44px;
     
     &--active {
-      color: $primary;
+      color: #e74c3c;
     }
     
     &-count {
-      font-size: $font-size-sm;
-      font-weight: $font-weight-medium;
+      font-size: $font-size-base;
+      font-weight: $font-weight-regular;
+      line-height: 1;
     }
   }
   
+  // Detailed variant (기본 스타일과 동일)
+  &--detailed {
+    background: white;
+    border: 1px solid $gray-800;
+    border-radius: $radius-md;
+    padding: $spacing-xl;
+    margin-bottom: $spacing-lg;
+
+    .ds-feed-card__actions {
+      border-top: 1px solid #f8f8f8;
+    }
+  }
+
   // Compact variant
   &--compact {
     padding: $spacing-lg;
@@ -128,7 +186,6 @@
       font-size: 13px;
     }
   }
-  
 }
 
 // Rating component
