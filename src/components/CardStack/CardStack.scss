@@ -1,0 +1,145 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-card-stack {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  
+  &__container {
+    position: relative;
+    height: 600px;
+    
+    @include mobile {
+      height: 500px;
+    }
+  }
+  
+  &__card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    transition: transform $swipe-duration-base $swipe-spring;
+    will-change: transform;
+    
+    &--removing {
+      pointer-events: none;
+      
+      .ds-swipe-card {
+        transition: transform $swipe-duration-fast $swipe-ease-out,
+                   opacity $swipe-duration-fast $swipe-ease-out;
+      }
+    }
+  }
+  
+  &__progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-md;
+    margin-top: $spacing-xl;
+    padding: 0 $spacing-sm;
+  }
+  
+  &__progress-bar {
+    flex: 1;
+    height: 4px;
+    background: $gray-700;
+    border-radius: $radius-full;
+    overflow: hidden;
+  }
+  
+  &__progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, $primary, $secondary);
+    border-radius: $radius-full;
+    transition: width $swipe-duration-base $swipe-ease-out;
+  }
+  
+  &__progress-text {
+    font-size: $font-size-sm;
+    color: $gray-400;
+    font-weight: $font-weight-medium;
+    white-space: nowrap;
+    min-width: 48px;
+    text-align: right;
+  }
+  
+  &__empty {
+    @include flex-center;
+    flex-direction: column;
+    height: 400px;
+    text-align: center;
+    padding: $spacing-4xl;
+    
+    @include mobile {
+      height: 300px;
+      padding: $spacing-2xl;
+    }
+  }
+  
+  &__empty-icon {
+    font-size: 64px;
+    margin-bottom: $spacing-xl;
+    
+    @include mobile {
+      font-size: 48px;
+      margin-bottom: $spacing-lg;
+    }
+  }
+  
+  &__empty-title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $gray-100;
+    margin-bottom: $spacing-md;
+    line-height: $line-height-normal;
+    
+    @include mobile {
+      font-size: $font-size-lg;
+    }
+  }
+  
+  &__empty-description {
+    font-size: $font-size-base;
+    color: $gray-400;
+    line-height: $line-height-relaxed;
+    max-width: 280px;
+  }
+  
+  // 스택 효과 개선
+  &__card:nth-child(1) { 
+    z-index: 3; 
+  }
+  &__card:nth-child(2) { 
+    z-index: 2;
+    filter: brightness(0.98);
+  }
+  &__card:nth-child(3) { 
+    z-index: 1;
+    filter: brightness(0.96);
+  }
+  &__card:nth-child(4) { 
+    z-index: 0;
+    filter: brightness(0.94);
+  }
+  
+  // 접근성 개선
+  @media (prefers-reduced-motion: reduce) {
+    &__card,
+    &__progress-fill {
+      transition: none !important;
+    }
+  }
+  
+  // 터치 디바이스 최적화
+  @include mobile {
+    &__container {
+      // 터치 영역 확보
+      padding: $spacing-sm;
+      margin: -#{$spacing-sm};
+    }
+  }
+}

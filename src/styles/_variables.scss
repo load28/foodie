@@ -90,6 +90,15 @@ $radius-full: 50%;
 $transition-fast: all 0.2s ease;
 $transition-base: all 0.3s ease;
 
+// Swipe animations
+$swipe-threshold: 120px;
+$swipe-rotation-max: 15deg;
+$swipe-scale-min: 0.95;
+$swipe-duration-fast: 0.3s;
+$swipe-duration-base: 0.5s;
+$swipe-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+$swipe-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
 // Shadows
 $shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
 $shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);

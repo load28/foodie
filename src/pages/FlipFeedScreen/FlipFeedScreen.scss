@@ -1,0 +1,294 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-flip-feed {
+  min-height: 100vh;
+  background: linear-gradient(135deg, $gray-900 0%, $gray-800 100%);
+  display: flex;
+  flex-direction: column;
+  
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $spacing-lg $spacing-xl;
+    background: rgba(white, 0.95);
+    border-bottom: 1px solid $gray-700;
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    
+    @include mobile {
+      padding: $spacing-md $spacing-lg;
+    }
+  }
+  
+  &__back-button {
+    color: $gray-200;
+    
+    &:hover {
+      background: $gray-800;
+    }
+  }
+  
+  &__title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $gray-100;
+    margin: 0;
+    
+    @include mobile {
+      font-size: $font-size-lg;
+    }
+  }
+  
+  &__header-placeholder {
+    width: 40px;
+  }
+  
+  &__container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: $spacing-xl;
+    
+    @include mobile {
+      padding: $spacing-lg;
+    }
+  }
+  
+  &__instructions {
+    text-align: center;
+    margin-bottom: $spacing-2xl;
+    
+    p {
+      font-size: $font-size-base;
+      color: $gray-300;
+      margin-bottom: $spacing-md;
+      font-weight: $font-weight-regular;
+    }
+    
+    &-icons {
+      display: flex;
+      justify-content: center;
+      gap: $spacing-2xl;
+    }
+    
+    &-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-xs;
+      font-size: $font-size-sm;
+      color: $gray-400;
+      font-weight: $font-weight-medium;
+    }
+    
+    &-icon {
+      font-size: 24px;
+      margin-bottom: $spacing-xs;
+    }
+  }
+  
+  &__keyboard-instructions {
+    font-size: $font-size-xs;
+    color: $gray-500;
+    margin-top: $spacing-md;
+    padding: $spacing-sm $spacing-md;
+    background: rgba($gray-700, 0.5);
+    border-radius: $radius-sm;
+    border: 1px solid $gray-600;
+    text-align: center;
+    
+    @include mobile {
+      display: none;
+    }
+  }
+  
+  &__stack-container {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 600px;
+    
+    @include mobile {
+      min-height: 500px;
+    }
+  }
+  
+  &__loading {
+    @include flex-center;
+    flex-direction: column;
+    flex: 1;
+    padding: $spacing-4xl;
+    
+    &-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid $gray-700;
+      border-top: 3px solid $primary;
+      border-radius: $radius-full;
+      animation: spin 1s linear infinite;
+      margin-bottom: $spacing-xl;
+    }
+    
+    &-text {
+      font-size: $font-size-base;
+      color: $gray-400;
+      text-align: center;
+    }
+  }
+  
+  &__stats {
+    display: flex;
+    justify-content: center;
+    gap: $spacing-4xl;
+    padding: $spacing-xl;
+    background: rgba(white, 0.95);
+    border-top: 1px solid $gray-700;
+    backdrop-filter: blur(10px);
+    
+    @include mobile {
+      gap: $spacing-2xl;
+      padding: $spacing-lg;
+    }
+  }
+  
+  &__stat-item {
+    @include flex-center;
+    flex-direction: column;
+    gap: $spacing-xs;
+  }
+  
+  &__stat-value {
+    font-size: $font-size-2xl;
+    font-weight: $font-weight-bold;
+    color: $primary;
+    
+    @include mobile {
+      font-size: $font-size-xl;
+    }
+  }
+  
+  &__stat-label {
+    font-size: $font-size-sm;
+    color: $gray-400;
+    font-weight: $font-weight-medium;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  // Empty state styles
+  &__empty-icon {
+    font-size: 64px;
+    margin-bottom: $spacing-xl;
+    
+    @include mobile {
+      font-size: 48px;
+      margin-bottom: $spacing-lg;
+    }
+  }
+  
+  &__empty-title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $gray-100;
+    margin-bottom: $spacing-md;
+    line-height: $line-height-normal;
+    
+    @include mobile {
+      font-size: $font-size-lg;
+    }
+  }
+  
+  &__empty-description {
+    font-size: $font-size-base;
+    color: $gray-400;
+    line-height: $line-height-relaxed;
+    margin-bottom: $spacing-2xl;
+    max-width: 280px;
+    text-align: center;
+  }
+  
+  &__restart-button {
+    gap: $spacing-sm;
+    
+    .ds-button__text {
+      display: flex;
+      align-items: center;
+      gap: $spacing-sm;
+    }
+  }
+}
+
+// 스핀 애니메이션
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// 다크 모드 지원
+@media (prefers-color-scheme: dark) {
+  .ds-flip-feed {
+    background: linear-gradient(135deg, $gray-100 0%, $gray-200 100%);
+    
+    &__header,
+    &__stats {
+      background: rgba($gray-200, 0.95);
+      border-color: $gray-300;
+    }
+    
+    &__title {
+      color: $gray-950;
+    }
+    
+    &__instructions p {
+      color: $gray-600;
+    }
+    
+    &__instructions-item {
+      color: $gray-500;
+    }
+    
+    &__loading-text {
+      color: $gray-500;
+    }
+    
+    &__stat-label {
+      color: $gray-500;
+    }
+    
+    &__empty-title {
+      color: $gray-950;
+    }
+    
+    &__empty-description {
+      color: $gray-500;
+    }
+  }
+}
+
+// 접근성 - Screen Reader 전용
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// 모션 감소 설정
+@media (prefers-reduced-motion: reduce) {
+  .ds-flip-feed {
+    &__loading-spinner {
+      animation: none;
+      border-top-color: transparent;
+    }
+  }
+}

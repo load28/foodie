@@ -1,0 +1,193 @@
+@use '../../styles/variables' as *;
+@use '../../styles/mixins' as *;
+
+.ds-action-indicator {
+  --intensity: 0.5;
+  
+  position: absolute;
+  border-radius: $radius-full;
+  @include flex-center;
+  opacity: 0;
+  transition: opacity $swipe-duration-fast $swipe-ease-out;
+  pointer-events: none;
+  user-select: none;
+  
+  // Sizes
+  &--small {
+    width: 60px;
+    height: 60px;
+  }
+  
+  &--medium {
+    width: 80px;
+    height: 80px;
+  }
+  
+  &--large {
+    width: 100px;
+    height: 100px;
+  }
+  
+  // Positions
+  &--left {
+    top: 50%;
+    left: $spacing-xl;
+    transform: translateY(-50%);
+  }
+  
+  &--right {
+    top: 50%;
+    right: $spacing-xl;
+    transform: translateY(-50%);
+  }
+  
+  &--top {
+    top: $spacing-xl;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  // Colors
+  &--like {
+    background: rgba($green-100, calc(var(--intensity) * 0.3));
+    border: 2px solid rgba($green-100, var(--intensity));
+    color: $green-100;
+    
+    .ds-action-indicator__icon {
+      color: $green-100;
+    }
+  }
+  
+  &--pass {
+    background: rgba($red-100, calc(var(--intensity) * 0.3));
+    border: 2px solid rgba($red-100, var(--intensity));
+    color: $red-100;
+    
+    .ds-action-indicator__icon {
+      color: $red-100;
+    }
+  }
+  
+  &--super-like {
+    background: rgba($yellow-100, calc(var(--intensity) * 0.3));
+    border: 2px solid rgba($yellow-100, var(--intensity));
+    color: $yellow-100;
+    
+    .ds-action-indicator__icon {
+      color: $yellow-100;
+    }
+  }
+  
+  &--default {
+    background: rgba($gray-400, calc(var(--intensity) * 0.3));
+    border: 2px solid rgba($gray-400, var(--intensity));
+    color: $gray-400;
+  }
+  
+  // Visible state
+  &--visible {
+    opacity: 1;
+  }
+  
+  &__content {
+    @include flex-center;
+    flex-direction: column;
+    gap: $spacing-xs;
+    text-align: center;
+  }
+  
+  &__icon {
+    font-size: 24px;
+    line-height: 1;
+    
+    .ds-action-indicator--small & {
+      font-size: 18px;
+    }
+    
+    .ds-action-indicator--large & {
+      font-size: 32px;
+    }
+  }
+  
+  &__text {
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    
+    .ds-action-indicator--small & {
+      font-size: 10px;
+    }
+    
+    .ds-action-indicator--large & {
+      font-size: $font-size-sm;
+    }
+  }
+  
+  // 펄스 애니메이션
+  &--visible.ds-action-indicator--pulse {
+    animation: pulse 1s ease-in-out infinite;
+  }
+}
+
+// 펄스 애니메이션 키프레임
+@keyframes pulse {
+  0%, 100% {
+    transform: translateY(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+// top 위치에 대한 펄스 애니메이션
+.ds-action-indicator--top.ds-action-indicator--visible.ds-action-indicator--pulse {
+  @keyframes pulse-top {
+    0%, 100% {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translateX(-50%) scale(1.1);
+      opacity: 0.8;
+    }
+  }
+  
+  animation: pulse-top 1s ease-in-out infinite;
+}
+
+// 고대비 모드 지원
+@media (prefers-contrast: high) {
+  .ds-action-indicator {
+    border-width: 3px;
+    
+    &--like {
+      background: rgba($green-100, 0.4);
+      border-color: $green-100;
+    }
+    
+    &--pass {
+      background: rgba($red-100, 0.4);
+      border-color: $red-100;
+    }
+    
+    &--super-like {
+      background: rgba($yellow-100, 0.4);
+      border-color: $yellow-100;
+    }
+  }
+}
+
+// 모션 감소 설정
+@media (prefers-reduced-motion: reduce) {
+  .ds-action-indicator {
+    transition: none !important;
+    
+    &--pulse {
+      animation: none !important;
+    }
+  }
+}

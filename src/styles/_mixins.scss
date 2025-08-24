@@ -102,3 +102,36 @@
     bottom: 0;
   }
 }
+
+// Swipe Transform
+@mixin swipe-transform($x: 0, $rotation: 0deg, $scale: 1) {
+  transform: translateX($x) rotate($rotation) scale($scale);
+  transform-origin: center center;
+}
+
+// Card Stack Layer
+@mixin card-stack-layer($index: 0, $offset: 8px) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10 - $index;
+  transform: translateY($index * $offset) scale(1 - ($index * 0.02));
+}
+
+// Action Feedback
+@mixin action-feedback($color, $intensity: 0.5) {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba($color, 0.1);
+  border: 2px solid rgba($color, $intensity);
+  border-radius: $radius-full;
+  opacity: 0;
+  transition: opacity $swipe-duration-fast $swipe-ease-out;
+  
+  &--visible {
+    opacity: $intensity;
+  }
+}
