@@ -18,6 +18,10 @@
     opacity: 0.6;
   }
   
+  &--swiped-out {
+    pointer-events: none;
+  }
+  
   
   // 터치 디바이스에서 스크롤 방지
   @include mobile {

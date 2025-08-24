@@ -143,19 +143,20 @@
   }
 }
 
-// top 위치에 대한 펄스 애니메이션
-.ds-action-indicator--top.ds-action-indicator--visible.ds-action-indicator--pulse {
-  @keyframes pulse-top {
-    0%, 100% {
-      transform: translateX(-50%) scale(1);
-      opacity: 1;
-    }
-    50% {
-      transform: translateX(-50%) scale(1.1);
-      opacity: 0.8;
-    }
+// top 위치에 대한 펄스 애니메이션 키프레임
+@keyframes pulse-top {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
   }
-  
+  50% {
+    transform: translateX(-50%) scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+// top 위치에 대한 펄스 애니메이션 적용
+.ds-action-indicator--top.ds-action-indicator--visible.ds-action-indicator--pulse {
   animation: pulse-top 1s ease-in-out infinite;
 }
 

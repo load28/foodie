@@ -31,11 +31,13 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [isSwipedOut, setIsSwipedOut] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const resetCard = useCallback(() => {
     setDragOffset({ x: 0, y: 0 });
     setIsDragging(false);
+    setIsSwipedOut(false);
   }, []);
 
   const handleStart = useCallback((clientX: number, clientY: number) => {
@@ -61,16 +63,28 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
     const absX = Math.abs(dragOffset.x);
     
     if (absX >= threshold) {
-      if (dragOffset.x > 0) {
-        onSwipeRight?.();
-      } else {
-        onSwipeLeft?.();
-      }
+      // 스와이프 성공: 카드를 화면 밖으로 이동
+      setIsSwipedOut(true);
+      const exitX = dragOffset.x > 0 ? window.innerWidth * 1.5 : -window.innerWidth * 1.5;
+      const exitY = dragOffset.y * 2;
+      setDragOffset({ x: exitX, y: exitY });
+      setIsDragging(false);
+      
+      // 애니메이션 후 콜백 호출
+      setTimeout(() => {
+        if (dragOffset.x > 0) {
+          onSwipeRight?.();
+        } else {
+          onSwipeLeft?.();
+        }
+        onSwipeEnd?.();
+      }, 300);
+    } else {
+      // 스와이프 실패: 원위치로 복귀
+      resetCard();
+      onSwipeEnd?.();
     }
-    
-    resetCard();
-    onSwipeEnd?.();
-  }, [isDragging, disabled, dragOffset.x, threshold, onSwipeLeft, onSwipeRight, onSwipeEnd, resetCard]);
+  }, [isDragging, disabled, dragOffset.x, dragOffset.y, threshold, onSwipeLeft, onSwipeRight, onSwipeEnd, resetCard]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -83,24 +97,32 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   }, [handleStart]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (disabled) return;
+    if (disabled || isSwipedOut) return;
     
     switch (e.key) {
       case 'ArrowLeft':
       case 'Backspace':
         e.preventDefault();
-        onSwipeLeft?.();
+        setIsSwipedOut(true);
+        setDragOffset({ x: -window.innerWidth * 1.5, y: 0 });
+        setTimeout(() => {
+          onSwipeLeft?.();
+        }, 300);
         break;
       case 'ArrowRight':
       case ' ':
         e.preventDefault();
-        onSwipeRight?.();
+        setIsSwipedOut(true);
+        setDragOffset({ x: window.innerWidth * 1.5, y: 0 });
+        setTimeout(() => {
+          onSwipeRight?.();
+        }, 300);
         break;
       case 'Escape':
         resetCard();
         break;
     }
-  }, [disabled, onSwipeLeft, onSwipeRight, resetCard]);
+  }, [disabled, isSwipedOut, onSwipeLeft, onSwipeRight, resetCard]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX, e.clientY);
@@ -139,16 +161,16 @@ const SwipeCard: React.FC<SwipeCardProps> = ({
   return (
     <div 
       ref={cardRef}
-      className={`ds-swipe-card ${isDragging ? 'ds-swipe-card--dragging' : ''} ${disabled ? 'ds-swipe-card--disabled' : ''}`}
+      className={`ds-swipe-card ${isDragging ? 'ds-swipe-card--dragging' : ''} ${disabled ? 'ds-swipe-card--disabled' : ''} ${isSwipedOut ? 'ds-swipe-card--swiped-out' : ''}`}
       style={{
         transform: `translateX(${dragOffset.x}px) translateY(${dragOffset.y}px) rotate(${rotation}deg) scale(${scale})`,
-        opacity,
+        opacity: isSwipedOut ? 0 : opacity,
         transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
       }}
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}
       onKeyDown={handleKeyDown}
-      tabIndex={disabled ? -1 : 0}
+      tabIndex={disabled || isSwipedOut ? -1 : 0}
       role="button"
       aria-label="맛집 카드 - 좌우 화살표키나 스페이스바로 선택, ESC로 리셋"
       aria-describedby="swipe-instructions"
