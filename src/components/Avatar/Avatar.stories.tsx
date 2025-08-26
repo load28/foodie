@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
+import { User, Users, UserCircle, UserSquare, Shield, Crown, Star } from 'lucide-react';
 import Avatar from './Avatar';
 
 const meta: Meta<typeof Avatar> = {
@@ -24,9 +25,6 @@ const meta: Meta<typeof Avatar> = {
     clickable: {
       control: 'boolean',
     },
-    children: {
-      control: 'text',
-    },
     image: {
       control: 'text',
     },
@@ -38,13 +36,12 @@ type Story = StoryObj<typeof Avatar>;
 
 export const Default: Story = {
   args: {
-    children: '김',
+    // 기본값으로 User 아이콘 사용
   },
 };
 
 export const Small: Story = {
   args: {
-    children: '이',
     size: 'small',
     color: 'secondary',
   },
@@ -52,7 +49,6 @@ export const Small: Story = {
 
 export const Large: Story = {
   args: {
-    children: '박',
     size: 'large',
     color: 'accent',
   },
@@ -60,7 +56,6 @@ export const Large: Story = {
 
 export const ExtraLarge: Story = {
   args: {
-    children: '최',
     size: 'xl',
     color: 'primary',
   },
@@ -68,14 +63,12 @@ export const ExtraLarge: Story = {
 
 export const WithStatus: Story = {
   args: {
-    children: '온',
     status: 'online',
   },
 };
 
 export const Away: Story = {
   args: {
-    children: '자',
     status: 'away',
     color: 'secondary',
   },
@@ -83,7 +76,6 @@ export const Away: Story = {
 
 export const Offline: Story = {
   args: {
-    children: '오',
     status: 'offline',
     color: 'gray',
   },
@@ -91,7 +83,6 @@ export const Offline: Story = {
 
 export const Clickable: Story = {
   args: {
-    children: '클',
     clickable: true,
     onClick: () => alert('Avatar clicked!'),
   },
@@ -99,27 +90,46 @@ export const Clickable: Story = {
 
 export const AllSizes = () => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-    <Avatar size="small">소</Avatar>
-    <Avatar size="medium">중</Avatar>
-    <Avatar size="large">대</Avatar>
-    <Avatar size="xl">특</Avatar>
+    <Avatar size="small" />
+    <Avatar size="medium" />
+    <Avatar size="large" />
+    <Avatar size="xl" />
   </div>
 );
 
 export const AllColors = () => (
   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-    <Avatar color="primary">P</Avatar>
-    <Avatar color="secondary">S</Avatar>
-    <Avatar color="accent">A</Avatar>
-    <Avatar color="gray">G</Avatar>
+    <Avatar color="primary" />
+    <Avatar color="secondary" />
+    <Avatar color="accent" />
+    <Avatar color="gray" />
+  </div>
+);
+
+export const DifferentIcons = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    <Avatar icon={User} color="primary" />
+    <Avatar icon={Users} color="secondary" />
+    <Avatar icon={UserCircle} color="accent" />
+    <Avatar icon={UserSquare} color="gray" />
+    <Avatar icon={Shield} color="primary" />
+    <Avatar icon={Crown} color="secondary" />
+    <Avatar icon={Star} color="accent" />
   </div>
 );
 
 export const AvatarGroup = () => (
   <div className="ds-avatar-group">
-    <Avatar color="primary">김</Avatar>
-    <Avatar color="secondary">이</Avatar>
-    <Avatar color="accent">박</Avatar>
-    <Avatar color="gray">+2</Avatar>
+    <Avatar color="primary" icon={User} />
+    <Avatar color="secondary" icon={Users} />
+    <Avatar color="accent" icon={UserCircle} />
+    <Avatar color="gray" icon={Crown} />
   </div>
 );
+
+export const WithImage: Story = {
+  args: {
+    image: 'https://via.placeholder.com/150',
+    alt: 'User Avatar',
+  },
+};
