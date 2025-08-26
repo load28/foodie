@@ -1,8 +1,9 @@
 import React from 'react';
+import { LucideIcon, User } from 'lucide-react';
 import './Avatar.scss';
 
 interface AvatarProps {
-  children?: React.ReactNode;
+  icon?: LucideIcon;
   image?: string;
   size?: 'small' | 'medium' | 'large' | 'xl';
   color?: 'primary' | 'secondary' | 'accent' | 'gray';
@@ -14,7 +15,7 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ 
-  children,
+  icon: Icon = User,
   image,
   size = 'medium',
   color = 'primary',
@@ -35,6 +36,13 @@ const Avatar: React.FC<AvatarProps> = ({
 
   const handleClick = clickable ? onClick : undefined;
 
+  const iconSizeMap = {
+    small: 14,
+    medium: 18,
+    large: 24,
+    xl: 32
+  };
+
   return (
     <div 
       className={avatarClassName} 
@@ -45,7 +53,7 @@ const Avatar: React.FC<AvatarProps> = ({
       {image ? (
         <img src={image} alt={alt} className="ds-avatar__image" />
       ) : (
-        children
+        <Icon size={iconSizeMap[size]} />
       )}
       {status && (
         <div className={`ds-avatar__status ds-avatar__status--${status}`} />

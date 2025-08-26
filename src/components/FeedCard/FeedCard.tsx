@@ -5,7 +5,6 @@ import './FeedCard.scss';
 
 interface FeedCardProps {
   authorName?: string;
-  authorInitial?: string;
   timeAgo?: string;
   title?: string;
   content?: string;
@@ -26,7 +25,6 @@ interface FeedCardProps {
 
 const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({ 
   authorName = '작성자',
-  authorInitial = '작',
   timeAgo = '방금 전',
   title = '맛집 후기',
   content = '정말 맛있었어요!',
@@ -57,9 +55,7 @@ const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({
           size="medium" 
           color="secondary" 
           className="ds-feed-card__avatar"
-        >
-          {authorInitial}
-        </Avatar>
+        />
         <div className="ds-feed-card__author-info">
           <div className="ds-feed-card__author">{authorName}</div>
           <div className="ds-feed-card__time">{timeAgo}</div>

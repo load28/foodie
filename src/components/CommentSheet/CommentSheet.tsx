@@ -208,9 +208,7 @@ const CommentSheet: React.FC<CommentSheetProps> = ({
                     size="small"
                     color="secondary"
                     className="ds-comment__avatar"
-                  >
-                    {comment.initial}
-                  </Avatar>
+                  />
 
                   <div className="ds-comment__content-wrapper">
                     <div className="ds-comment__author">{comment.author}</div>
@@ -265,9 +263,7 @@ const CommentSheet: React.FC<CommentSheetProps> = ({
           )}
 
           <div className="ds-comment-sheet__input-wrapper">
-            <Avatar size="medium" color="primary">
-              나
-            </Avatar>
+            <Avatar size="medium" color="primary" />
 
             <div className="ds-comment-sheet__input-group">
               <input

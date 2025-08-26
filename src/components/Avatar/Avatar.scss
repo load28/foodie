@@ -4,9 +4,10 @@
 
 .ds-avatar {
   border-radius: $radius-full;
-  background: linear-gradient(135deg, $primary, $secondary);
+  background: $gray-800;
+  border: 1px solid $gray-600;
   @include flex-center;
-  color: white;
+  color: $gray-300;
   font-weight: $font-weight-medium;
   font-family: $font-family;
   position: relative;
@@ -16,6 +17,7 @@
   width: 36px;
   height: 36px;
   font-size: $font-size-base;
+  box-sizing: border-box;
   
   // Sizes
   &--small {
@@ -69,20 +71,27 @@
   
   // Color variants
   &--primary {
-    background: linear-gradient(135deg, $primary, color.adjust($primary, $lightness: -10%));
+    background: $gray-800;
+    color: $gray-300;
+    border-color: $gray-600;
   }
   
   &--secondary {
-    background: linear-gradient(135deg, $secondary, color.adjust($secondary, $lightness: -10%));
+    background: $gray-900;
+    color: $gray-400;
+    border-color: $gray-700;
   }
   
   &--accent {
-    background: linear-gradient(135deg, $accent, color.adjust($accent, $lightness: -15%));
-    color: $gray-200;
+    background: $yellow-300;
+    color: $primary;
+    border-color: rgba($primary, 0.15);
   }
   
   &--gray {
-    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
+    background: $gray-700;
+    color: $gray-50;
+    border-color: $gray-600;
   }
   
   // Interactive
