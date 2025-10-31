@@ -35,3 +35,7 @@ uuid = { version = "1.10", features = ["v4", "serde"] }
 dotenv = "0.15"
 env_logger = "0.11"
 log = "0.4"
+
+[dev-dependencies]
+tokio-test = "0.4"
+mockall = "0.13"
