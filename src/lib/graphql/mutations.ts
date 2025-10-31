@@ -136,3 +136,17 @@ export const UPDATE_USER_PROFILE = gql`
     }
   }
 `;
+
+// 친구 추가
+export const ADD_FRIEND = gql`
+  mutation AddFriend($friendId: String!) {
+    addFriend(friendId: $friendId)
+  }
+`;
+
+// 친구 삭제
+export const REMOVE_FRIEND = gql`
+  mutation RemoveFriend($friendId: String!) {
+    removeFriend(friendId: $friendId)
+  }
+`;
