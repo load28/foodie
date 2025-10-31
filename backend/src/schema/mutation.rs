@@ -9,6 +9,7 @@ use crate::models::{
     AuthPayload, Comment, CreateCommentInput, CreateFeedPostInput, CreateUserInput,
     FeedPost, LoginInput, User, UserStatus,
 };
+use crate::session::{generate_session_id, RedisSessionStore, Session};
 
 pub struct MutationRoot;
 
@@ -17,6 +18,7 @@ impl MutationRoot {
     /// 회원가입
     async fn register(&self, ctx: &Context<'_>, input: CreateUserInput) -> Result<AuthPayload> {
         let pool = ctx.data::<SqlitePool>()?;
+        let session_store = ctx.data::<RedisSessionStore>()?;
 
         // 이메일 중복 체크
         let existing_user: Option<User> = sqlx::query_as(
@@ -66,16 +68,26 @@ impl MutationRoot {
         .fetch_one(pool)
         .await?;
 
-        // JWT 토큰 생성
+        // 세션 생성
+        let session_id = generate_session_id();
+        let session = Session::new(user_id.clone(), now.timestamp());
+
+        session_store.save_session(&session_id, &session)
+            .await
+            .map_err(|e| format!("Failed to create session: {}", e))?;
+
+        // JWT 토큰도 유지 (하위 호환성)
         let token = create_jwt(&user_id)
             .map_err(|_| "Failed to create token")?;
 
-        Ok(AuthPayload { user, token })
+        // 세션 ID를 토큰으로 반환 (프론트엔드에서 Authorization 헤더로 사용)
+        Ok(AuthPayload { user, token: session_id })
     }
 
     /// 로그인
     async fn login(&self, ctx: &Context<'_>, input: LoginInput) -> Result<AuthPayload> {
         let pool = ctx.data::<SqlitePool>()?;
+        let session_store = ctx.data::<RedisSessionStore>()?;
 
         // 사용자 조회
         let user: Option<User> = sqlx::query_as(
@@ -104,20 +116,28 @@ impl MutationRoot {
         .execute(pool)
         .await?;
 
-        // JWT 토큰 생성
-        let token = create_jwt(&user.id)
-            .map_err(|_| "Failed to create token")?;
+        // 세션 생성
+        let session_id = generate_session_id();
+        let now = Utc::now();
+        let session = Session::new(user.id.clone(), now.timestamp());
 
-        Ok(AuthPayload { user, token })
+        session_store.save_session(&session_id, &session)
+            .await
+            .map_err(|e| format!("Failed to create session: {}", e))?;
+
+        // 세션 ID를 토큰으로 반환
+        Ok(AuthPayload { user, token: session_id })
     }
 
     /// 로그아웃
-    async fn logout(&self, ctx: &Context<'_>) -> Result<bool> {
+    async fn logout(&self, ctx: &Context<'_>, session_id: Option<String>) -> Result<bool> {
         let user_id = ctx.data_opt::<String>()
             .ok_or("Unauthorized")?;
 
         let pool = ctx.data::<SqlitePool>()?;
+        let session_store = ctx.data::<RedisSessionStore>()?;
 
+        // 사용자 상태를 오프라인으로 업데이트
         sqlx::query(
             "UPDATE users SET status = ? WHERE id = ?"
         )
@@ -125,6 +145,18 @@ impl MutationRoot {
         .bind(user_id)
         .execute(pool)
         .await?;
+
+        // 특정 세션 삭제 또는 모든 세션 삭제
+        if let Some(sid) = session_id {
+            session_store.delete_session(&sid)
+                .await
+                .map_err(|e| format!("Failed to delete session: {}", e))?;
+        } else {
+            // 사용자의 모든 세션 삭제
+            session_store.delete_user_sessions(user_id)
+                .await
+                .map_err(|e| format!("Failed to delete user sessions: {}", e))?;
+        }
 
         Ok(true)
     }

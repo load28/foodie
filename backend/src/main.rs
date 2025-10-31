@@ -2,6 +2,7 @@ mod auth;
 mod db;
 mod models;
 mod schema;
+mod session;
 
 use actix_cors::Cors;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
@@ -13,6 +14,7 @@ use std::env;
 use crate::auth::jwt::verify_jwt;
 use crate::db::{create_pool, init_db};
 use crate::schema::{create_schema, AppSchema};
+use crate::session::{middleware, RedisSessionStore};
 
 async fn graphql_playground() -> Result<HttpResponse> {
     let source = playground_source(GraphQLPlaygroundConfig::new("/graphql"));
@@ -23,13 +25,20 @@ async fn graphql_playground() -> Result<HttpResponse> {
 
 async fn graphql_handler(
     schema: web::Data<AppSchema>,
+    session_store: web::Data<RedisSessionStore>,
     req: HttpRequest,
     gql_request: GraphQLRequest,
 ) -> GraphQLResponse {
     let mut request = gql_request.into_inner();
 
-    // JWT 토큰에서 사용자 ID 추출
-    if let Some(auth_header) = req.headers().get("Authorization") {
+    // 세션 기반 인증 (우선 순위)
+    if let Some(session_id) = middleware::extract_session_id(&req) {
+        if let Ok(user_id) = middleware::verify_session(&session_store, &session_id).await {
+            request = request.data(user_id);
+        }
+    }
+    // JWT 토큰 폴백 (하위 호환성)
+    else if let Some(auth_header) = req.headers().get("Authorization") {
         if let Ok(auth_str) = auth_header.to_str() {
             if auth_str.starts_with("Bearer ") {
                 let token = &auth_str[7..];
@@ -68,6 +77,19 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Database initialized successfully");
 
+    // Redis 세션 스토어 초기화
+    let session_store = RedisSessionStore::new()
+        .await
+        .expect("Failed to create Redis session store");
+
+    // Redis 연결 테스트
+    session_store
+        .ping()
+        .await
+        .expect("Failed to connect to Redis");
+
+    log::info!("Redis session store initialized successfully");
+
     // GraphQL 스키마 생성
     let schema = create_schema();
 
@@ -87,6 +109,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(schema.clone()))
             .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(session_store.clone()))
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())
