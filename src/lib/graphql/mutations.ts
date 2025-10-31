@@ -1,0 +1,138 @@
+import { gql } from '@apollo/client';
+
+// 회원가입
+export const REGISTER = gql`
+  mutation Register($input: CreateUserInput!) {
+    register(input: $input) {
+      token
+      sessionId
+      user {
+        id
+        email
+        name
+        initial
+        profileImage
+        status
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// 로그인
+export const LOGIN = gql`
+  mutation Login($input: LoginInput!) {
+    login(input: $input) {
+      token
+      sessionId
+      user {
+        id
+        email
+        name
+        initial
+        profileImage
+        status
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// 로그아웃
+export const LOGOUT = gql`
+  mutation Logout {
+    logout
+  }
+`;
+
+// 피드 포스트 생성
+export const CREATE_FEED_POST = gql`
+  mutation CreateFeedPost($input: CreateFeedPostInput!) {
+    createFeedPost(input: $input) {
+      id
+      title
+      content
+      location
+      rating
+      category
+      tags
+      foodImage
+      authorId
+      likes
+      comments
+      createdAt
+      updatedAt
+      author {
+        id
+        name
+        initial
+        profileImage
+        status
+      }
+    }
+  }
+`;
+
+// 포스트 좋아요 토글
+export const TOGGLE_POST_LIKE = gql`
+  mutation TogglePostLike($postId: String!) {
+    togglePostLike(postId: $postId) {
+      id
+      likes
+    }
+  }
+`;
+
+// 댓글 작성
+export const CREATE_COMMENT = gql`
+  mutation CreateComment($input: CreateCommentInput!) {
+    createComment(input: $input) {
+      id
+      postId
+      authorId
+      content
+      parentCommentId
+      isReply
+      createdAt
+      updatedAt
+      author {
+        id
+        name
+        initial
+        profileImage
+        status
+      }
+      mentions {
+        id
+        name
+        initial
+        profileImage
+      }
+    }
+  }
+`;
+
+// 댓글 삭제
+export const DELETE_COMMENT = gql`
+  mutation DeleteComment($commentId: String!) {
+    deleteComment(commentId: $commentId)
+  }
+`;
+
+// 프로필 업데이트
+export const UPDATE_USER_PROFILE = gql`
+  mutation UpdateUserProfile($name: String, $profileImage: String) {
+    updateUserProfile(name: $name, profileImage: $profileImage) {
+      id
+      email
+      name
+      initial
+      profileImage
+      status
+      createdAt
+      updatedAt
+    }
+  }
+`;

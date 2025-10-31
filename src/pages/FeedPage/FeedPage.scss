@@ -1,0 +1,79 @@
+// FeedPage 스타일은 FeedScreen과 동일하게 사용
+@import '../FeedScreen/FeedScreen.scss';
+
+.ds-feed-page {
+  @extend .ds-feed-screen;
+}
+
+.ds-feed-page__header {
+  @extend .ds-feed-screen__header;
+}
+
+.ds-feed-page__header-inner {
+  @extend .ds-feed-screen__header-inner;
+}
+
+.ds-feed-page__logo {
+  @extend .ds-feed-screen__logo;
+}
+
+.ds-feed-page__header-actions {
+  @extend .ds-feed-screen__header-actions;
+}
+
+.ds-feed-page__header-btn {
+  @extend .ds-feed-screen__header-btn;
+}
+
+.ds-feed-page__container {
+  @extend .ds-feed-screen__container;
+}
+
+.ds-feed-page__filters {
+  @extend .ds-feed-screen__filters;
+}
+
+.ds-feed-page__filter {
+  @extend .ds-feed-screen__filter;
+
+  &--active {
+    @extend .ds-feed-screen__filter--active;
+  }
+}
+
+.ds-feed-page__feed {
+  @extend .ds-feed-screen__feed;
+}
+
+.ds-feed-page__loading {
+  @extend .ds-feed-screen__loading;
+}
+
+.ds-feed-page__spinner {
+  @extend .ds-feed-screen__spinner;
+}
+
+.ds-feed-page__end {
+  @extend .ds-feed-screen__end;
+}
+
+.ds-feed-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 20px;
+  text-align: center;
+
+  p {
+    margin: 8px 0;
+    color: #666;
+
+    &:first-child {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+    }
+  }
+}
