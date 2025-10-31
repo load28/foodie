@@ -1,0 +1,251 @@
+.search-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+
+  .search-header {
+    margin-bottom: 32px;
+    text-align: center;
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+      color: #111827;
+    }
+
+    p {
+      font-size: 16px;
+      color: #6b7280;
+      margin: 0;
+    }
+  }
+
+  .search-mode {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
+
+    .mode-button {
+      padding: 10px 24px;
+      background: white;
+      color: #6b7280;
+      border: 2px solid #e5e7eb;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: #d1d5db;
+      }
+
+      &.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+      }
+    }
+  }
+
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 16px;
+    margin-bottom: 24px;
+    transition: all 0.2s;
+
+    &:focus-within {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-icon {
+      color: #9ca3af;
+    }
+
+    input {
+      flex: 1;
+      border: none;
+      font-size: 16px;
+      outline: none;
+      background: transparent;
+
+      &::placeholder {
+        color: #9ca3af;
+      }
+    }
+
+    .search-button {
+      padding: 8px 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+
+      &:hover:not(:disabled) {
+        background: #2563eb;
+      }
+
+      &:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+      }
+    }
+  }
+
+  .category-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+
+    span {
+      font-size: 14px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
+    .category-button {
+      padding: 6px 16px;
+      background: white;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+      }
+
+      &.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
+      }
+    }
+  }
+
+  .search-results {
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 16px;
+      color: #6b7280;
+    }
+
+    .results-header {
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e5e7eb;
+
+      p {
+        font-size: 16px;
+        color: #6b7280;
+        margin: 0;
+
+        strong {
+          color: #111827;
+          font-weight: 700;
+        }
+      }
+    }
+
+    .posts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #9ca3af;
+
+      svg {
+        margin-bottom: 20px;
+        opacity: 0.4;
+      }
+
+      p {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 8px 0;
+        color: #6b7280;
+      }
+
+      small {
+        font-size: 14px;
+        color: #9ca3af;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .search-page {
+    padding: 16px;
+
+    .search-header {
+      margin-bottom: 24px;
+
+      h1 {
+        font-size: 24px;
+      }
+
+      p {
+        font-size: 14px;
+      }
+    }
+
+    .search-mode {
+      .mode-button {
+        flex: 1;
+      }
+    }
+
+    .search-box {
+      flex-direction: column;
+      padding: 12px;
+
+      .search-button {
+        width: 100%;
+      }
+    }
+
+    .category-filter {
+      padding: 12px;
+
+      .category-button {
+        font-size: 12px;
+        padding: 5px 12px;
+      }
+    }
+
+    .search-results {
+      .posts-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+  }
+}

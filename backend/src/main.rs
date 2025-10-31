@@ -2,6 +2,7 @@ mod auth;
 mod db;
 mod models;
 mod schema;
+mod search;
 mod session;
 
 use actix_cors::Cors;
@@ -14,6 +15,7 @@ use std::env;
 use crate::auth::jwt::verify_jwt;
 use crate::db::{create_pool, init_db};
 use crate::schema::{create_schema, AppSchema};
+use crate::search::{ElasticsearchClient, SearchService};
 use crate::session::{middleware, RedisSessionStore};
 
 async fn graphql_playground() -> Result<HttpResponse> {
@@ -90,6 +92,22 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Redis session store initialized successfully");
 
+    // Elasticsearch 초기화
+    let es_url = env::var("ELASTICSEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:9200".to_string());
+    let es_index = env::var("ELASTICSEARCH_INDEX").unwrap_or_else(|_| "foodie_posts".to_string());
+
+    let es_client = ElasticsearchClient::new(&es_url, &es_index)
+        .expect("Failed to create Elasticsearch client");
+
+    let search_service = SearchService::new(es_client);
+
+    // Elasticsearch 인덱스 생성 (이미 존재하면 무시됨)
+    if let Err(e) = search_service.create_index().await {
+        log::warn!("Failed to create Elasticsearch index (may already exist): {}", e);
+    } else {
+        log::info!("Elasticsearch index initialized successfully");
+    }
+
     // GraphQL 스키마 생성
     let schema = create_schema();
 
@@ -110,6 +128,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(schema.clone()))
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(session_store.clone()))
+            .app_data(web::Data::new(search_service.clone()))
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())

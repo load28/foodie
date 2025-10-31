@@ -29,6 +29,9 @@ jsonwebtoken = "9.3"
 # Redis (Session Management)
 redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
 
+# Elasticsearch (Search)
+elasticsearch = "8.15.0-alpha.1"
+
 # Utilities
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.10", features = ["v4", "serde"] }

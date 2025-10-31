@@ -9,6 +9,7 @@ use crate::models::{
     AuthPayload, Comment, CreateCommentInput, CreateFeedPostInput, CreateUserInput,
     FeedPost, LoginInput, User, UserStatus,
 };
+use crate::search::SearchService;
 use crate::session::{generate_session_id, RedisSessionStore, Session};
 
 pub struct MutationRoot;
@@ -201,6 +202,13 @@ impl MutationRoot {
         .bind(&post_id)
         .fetch_one(pool)
         .await?;
+
+        // Elasticsearch에 인덱싱
+        if let Ok(search_service) = ctx.data::<SearchService>() {
+            if let Err(e) = search_service.index_post(&post).await {
+                log::warn!("Failed to index post in Elasticsearch: {}", e);
+            }
+        }
 
         Ok(post)
     }
@@ -416,5 +424,92 @@ impl MutationRoot {
         .await?;
 
         Ok(user)
+    }
+
+    /// 친구 추가
+    async fn add_friend(&self, ctx: &Context<'_>, friend_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        if user_id == &friend_id {
+            return Err("Cannot add yourself as a friend".into());
+        }
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 친구가 존재하는지 확인
+        let friend_exists: Option<(String,)> = sqlx::query_as(
+            "SELECT id FROM users WHERE id = ?"
+        )
+        .bind(&friend_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if friend_exists.is_none() {
+            return Err("User not found".into());
+        }
+
+        // 이미 친구인지 확인
+        let existing_friendship: Option<(String,)> = sqlx::query_as(
+            "SELECT user_id FROM friendships WHERE user_id = ? AND friend_id = ?"
+        )
+        .bind(user_id)
+        .bind(&friend_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if existing_friendship.is_some() {
+            return Err("Already friends".into());
+        }
+
+        let now = Utc::now();
+
+        // 양방향 친구 관계 생성
+        sqlx::query(
+            "INSERT INTO friendships (user_id, friend_id, created_at) VALUES (?, ?, ?)"
+        )
+        .bind(user_id)
+        .bind(&friend_id)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        sqlx::query(
+            "INSERT INTO friendships (user_id, friend_id, created_at) VALUES (?, ?, ?)"
+        )
+        .bind(&friend_id)
+        .bind(user_id)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        Ok(true)
+    }
+
+    /// 친구 삭제
+    async fn remove_friend(&self, ctx: &Context<'_>, friend_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 양방향 친구 관계 삭제
+        sqlx::query(
+            "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?"
+        )
+        .bind(user_id)
+        .bind(&friend_id)
+        .execute(pool)
+        .await?;
+
+        sqlx::query(
+            "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?"
+        )
+        .bind(&friend_id)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+
+        Ok(true)
     }
 }
