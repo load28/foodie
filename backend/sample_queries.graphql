@@ -1,0 +1,382 @@
+# 샘플 GraphQL 쿼리 및 뮤테이션
+# GraphQL Playground에서 복사하여 사용하세요
+
+# ========================================
+# 1. 회원가입
+# ========================================
+mutation Register {
+  register(input: {
+    email: "test@example.com"
+    password: "password123"
+    name: "김서현"
+  }) {
+    user {
+      id
+      email
+      name
+      initial
+      status
+    }
+    token
+  }
+}
+
+# ========================================
+# 2. 로그인
+# ========================================
+mutation Login {
+  login(input: {
+    email: "test@example.com"
+    password: "password123"
+  }) {
+    user {
+      id
+      email
+      name
+      initial
+      status
+    }
+    token
+  }
+}
+
+# ========================================
+# 3. 피드 포스트 생성
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation CreatePost1 {
+  createFeedPost(input: {
+    title: "신선한 회가 일품인 횟집"
+    content: "정말 맛있어요! 회가 너무 신선하고 사장님도 친절하세요."
+    location: "서초구 방배동 바다횟집"
+    rating: 4.5
+    category: JAPANESE
+    tags: ["오마카세", "신선한회", "특별한날"]
+    foodImage: "🍣"
+  }) {
+    id
+    title
+    content
+    rating
+    category
+    tags
+    author {
+      name
+      initial
+    }
+  }
+}
+
+mutation CreatePost2 {
+  createFeedPost(input: {
+    title: "분위기 좋은 이탈리안 레스토랑"
+    content: "데이트하기 정말 좋은 곳이에요. 파스타가 예술입니다!"
+    location: "강남구 청담동 라트라토리아"
+    rating: 4.8
+    category: WESTERN
+    tags: ["파스타", "데이트", "분위기맛집"]
+    foodImage: "🍝"
+  }) {
+    id
+    title
+  }
+}
+
+mutation CreatePost3 {
+  createFeedPost(input: {
+    title: "숨은 맛집 브런치 카페"
+    content: "팬케이크가 정말 폭신폭신해요. 주말 브런치로 최고!"
+    location: "마포구 연남동 모닝글로리"
+    rating: 4.3
+    category: CAFE
+    tags: ["브런치", "팬케이크", "연남동"]
+    foodImage: "🥞"
+  }) {
+    id
+    title
+  }
+}
+
+# ========================================
+# 4. 피드 목록 조회 (전체)
+# ========================================
+query AllFeedPosts {
+  feedPosts(limit: 20, offset: 0) {
+    id
+    title
+    content
+    location
+    rating
+    foodImage
+    category
+    tags
+    likes
+    comments
+    createdAt
+    author {
+      name
+      initial
+      status
+    }
+    isLikedByCurrentUser
+  }
+}
+
+# ========================================
+# 5. 피드 목록 조회 (카테고리 필터)
+# ========================================
+query JapaneseFoodPosts {
+  feedPosts(limit: 10, offset: 0, category: JAPANESE) {
+    id
+    title
+    category
+    rating
+    foodImage
+    author {
+      name
+    }
+  }
+}
+
+query CafePosts {
+  feedPosts(limit: 10, offset: 0, category: CAFE) {
+    id
+    title
+    category
+    foodImage
+  }
+}
+
+# ========================================
+# 6. 특정 포스트 상세 조회
+# ========================================
+query GetPost($postId: String!) {
+  feedPost(id: $postId) {
+    id
+    title
+    content
+    location
+    rating
+    foodImage
+    category
+    tags
+    likes
+    comments
+    createdAt
+    updatedAt
+    author {
+      id
+      name
+      initial
+      profileImage
+      status
+    }
+    isLikedByCurrentUser
+  }
+}
+
+# Variables:
+# {
+#   "postId": "your-post-id-here"
+# }
+
+# ========================================
+# 7. 포스트 좋아요 토글
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation ToggleLike($postId: String!) {
+  togglePostLike(postId: $postId)
+}
+
+# Variables:
+# {
+#   "postId": "your-post-id-here"
+# }
+
+# ========================================
+# 8. 댓글 작성
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation CreateComment($postId: String!) {
+  createComment(input: {
+    postId: $postId
+    content: "정말 맛있어 보이네요! 저도 가보고 싶어요."
+  }) {
+    id
+    content
+    createdAt
+    isReply
+    author {
+      name
+      initial
+    }
+  }
+}
+
+# Variables:
+# {
+#   "postId": "your-post-id-here"
+# }
+
+# ========================================
+# 9. 답글 작성 (멘션 포함)
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation CreateReply($postId: String!, $parentCommentId: String!, $mentionedUserId: String!) {
+  createComment(input: {
+    postId: $postId
+    content: "저도 강추합니다! 꼭 가보세요."
+    parentCommentId: $parentCommentId
+    mentions: [$mentionedUserId]
+  }) {
+    id
+    content
+    isReply
+    author {
+      name
+    }
+    parentComment {
+      id
+      author {
+        name
+      }
+    }
+    mentions {
+      name
+    }
+  }
+}
+
+# Variables:
+# {
+#   "postId": "post-id",
+#   "parentCommentId": "parent-comment-id",
+#   "mentionedUserId": "user-id-to-mention"
+# }
+
+# ========================================
+# 10. 댓글 목록 조회
+# ========================================
+query GetComments($postId: String!) {
+  comments(postId: $postId, limit: 50, offset: 0) {
+    id
+    content
+    createdAt
+    isReply
+    author {
+      id
+      name
+      initial
+      profileImage
+    }
+    parentComment {
+      id
+      content
+      author {
+        name
+      }
+    }
+    mentions {
+      id
+      name
+    }
+  }
+}
+
+# Variables:
+# {
+#   "postId": "your-post-id-here"
+# }
+
+# ========================================
+# 11. 현재 사용자 정보
+# ========================================
+# Header: Authorization: Bearer <your-token>
+query CurrentUser {
+  currentUser {
+    id
+    email
+    name
+    initial
+    profileImage
+    status
+    createdAt
+    updatedAt
+  }
+}
+
+# ========================================
+# 12. 특정 사용자 정보
+# ========================================
+query GetUser($userId: String!) {
+  user(id: $userId) {
+    id
+    name
+    initial
+    profileImage
+    status
+  }
+}
+
+# Variables:
+# {
+#   "userId": "user-id-here"
+# }
+
+# ========================================
+# 13. 프로필 업데이트
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation UpdateProfile {
+  updateUserProfile(
+    name: "김영희"
+    profileImage: "https://example.com/avatar.jpg"
+  ) {
+    id
+    name
+    initial
+    profileImage
+    updatedAt
+  }
+}
+
+# ========================================
+# 14. 로그아웃
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation Logout {
+  logout
+}
+
+# ========================================
+# 15. 댓글 삭제
+# ========================================
+# Header: Authorization: Bearer <your-token>
+mutation DeleteComment($commentId: String!) {
+  deleteComment(commentId: $commentId)
+}
+
+# Variables:
+# {
+#   "commentId": "comment-id-here"
+# }
+
+# ========================================
+# 복합 쿼리 예시: 피드 + 각 포스트의 댓글
+# ========================================
+query FeedWithComments {
+  feedPosts(limit: 5, offset: 0) {
+    id
+    title
+    content
+    rating
+    category
+    foodImage
+    likes
+    comments
+    author {
+      name
+      initial
+    }
+  }
+}

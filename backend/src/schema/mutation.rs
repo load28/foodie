@@ -1,0 +1,388 @@
+use async_graphql::*;
+use chrono::Utc;
+use sqlx::SqlitePool;
+use uuid::Uuid;
+
+use crate::auth::{hash_password, verify_password};
+use crate::auth::jwt::create_jwt;
+use crate::models::{
+    AuthPayload, Comment, CreateCommentInput, CreateFeedPostInput, CreateUserInput,
+    FeedPost, LoginInput, User, UserStatus,
+};
+
+pub struct MutationRoot;
+
+#[Object]
+impl MutationRoot {
+    /// 회원가입
+    async fn register(&self, ctx: &Context<'_>, input: CreateUserInput) -> Result<AuthPayload> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 이메일 중복 체크
+        let existing_user: Option<User> = sqlx::query_as(
+            "SELECT * FROM users WHERE email = ?"
+        )
+        .bind(&input.email)
+        .fetch_optional(pool)
+        .await?;
+
+        if existing_user.is_some() {
+            return Err("Email already exists".into());
+        }
+
+        // 비밀번호 해시화
+        let password_hash = hash_password(&input.password)
+            .map_err(|_| "Failed to hash password")?;
+
+        // 사용자 이름에서 초성 추출 (간단히 첫 글자 사용)
+        let initial = input.name.chars().next()
+            .map(|c| c.to_string())
+            .unwrap_or_else(|| "?".to_string());
+
+        let user_id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+
+        // 사용자 생성
+        sqlx::query(
+            "INSERT INTO users (id, email, password_hash, name, initial, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&user_id)
+        .bind(&input.email)
+        .bind(&password_hash)
+        .bind(&input.name)
+        .bind(&initial)
+        .bind(UserStatus::Online)
+        .bind(now)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        // 생성된 사용자 조회
+        let user: User = sqlx::query_as(
+            "SELECT * FROM users WHERE id = ?"
+        )
+        .bind(&user_id)
+        .fetch_one(pool)
+        .await?;
+
+        // JWT 토큰 생성
+        let token = create_jwt(&user_id)
+            .map_err(|_| "Failed to create token")?;
+
+        Ok(AuthPayload { user, token })
+    }
+
+    /// 로그인
+    async fn login(&self, ctx: &Context<'_>, input: LoginInput) -> Result<AuthPayload> {
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 사용자 조회
+        let user: Option<User> = sqlx::query_as(
+            "SELECT * FROM users WHERE email = ?"
+        )
+        .bind(&input.email)
+        .fetch_optional(pool)
+        .await?;
+
+        let user = user.ok_or("Invalid email or password")?;
+
+        // 비밀번호 검증
+        let is_valid = verify_password(&input.password, &user.password_hash)
+            .map_err(|_| "Failed to verify password")?;
+
+        if !is_valid {
+            return Err("Invalid email or password".into());
+        }
+
+        // 사용자 상태를 온라인으로 업데이트
+        sqlx::query(
+            "UPDATE users SET status = ? WHERE id = ?"
+        )
+        .bind(UserStatus::Online)
+        .bind(&user.id)
+        .execute(pool)
+        .await?;
+
+        // JWT 토큰 생성
+        let token = create_jwt(&user.id)
+            .map_err(|_| "Failed to create token")?;
+
+        Ok(AuthPayload { user, token })
+    }
+
+    /// 로그아웃
+    async fn logout(&self, ctx: &Context<'_>) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        sqlx::query(
+            "UPDATE users SET status = ? WHERE id = ?"
+        )
+        .bind(UserStatus::Offline)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+
+        Ok(true)
+    }
+
+    /// 피드 포스트 생성
+    async fn create_feed_post(
+        &self,
+        ctx: &Context<'_>,
+        input: CreateFeedPostInput,
+    ) -> Result<FeedPost> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let post_id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+        let tags_json = serde_json::to_string(&input.tags)?;
+
+        sqlx::query(
+            "INSERT INTO feed_posts
+             (id, author_id, title, content, location, rating, food_image, category, tags, likes, comments_count, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)"
+        )
+        .bind(&post_id)
+        .bind(user_id)
+        .bind(&input.title)
+        .bind(&input.content)
+        .bind(&input.location)
+        .bind(input.rating)
+        .bind(&input.food_image)
+        .bind(input.category)
+        .bind(&tags_json)
+        .bind(now)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        let post: FeedPost = sqlx::query_as(
+            "SELECT * FROM feed_posts WHERE id = ?"
+        )
+        .bind(&post_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(post)
+    }
+
+    /// 포스트 좋아요 토글
+    async fn toggle_post_like(&self, ctx: &Context<'_>, post_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 이미 좋아요를 눌렀는지 확인
+        let existing_like: Option<(String,)> = sqlx::query_as(
+            "SELECT post_id FROM post_likes WHERE post_id = ? AND user_id = ?"
+        )
+        .bind(&post_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+
+        let is_liked = if existing_like.is_some() {
+            // 좋아요 취소
+            sqlx::query(
+                "DELETE FROM post_likes WHERE post_id = ? AND user_id = ?"
+            )
+            .bind(&post_id)
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+
+            // 좋아요 수 감소
+            sqlx::query(
+                "UPDATE feed_posts SET likes = likes - 1 WHERE id = ?"
+            )
+            .bind(&post_id)
+            .execute(pool)
+            .await?;
+
+            false
+        } else {
+            // 좋아요 추가
+            let now = Utc::now();
+            sqlx::query(
+                "INSERT INTO post_likes (post_id, user_id, created_at) VALUES (?, ?, ?)"
+            )
+            .bind(&post_id)
+            .bind(user_id)
+            .bind(now)
+            .execute(pool)
+            .await?;
+
+            // 좋아요 수 증가
+            sqlx::query(
+                "UPDATE feed_posts SET likes = likes + 1 WHERE id = ?"
+            )
+            .bind(&post_id)
+            .execute(pool)
+            .await?;
+
+            true
+        };
+
+        Ok(is_liked)
+    }
+
+    /// 댓글 작성
+    async fn create_comment(
+        &self,
+        ctx: &Context<'_>,
+        input: CreateCommentInput,
+    ) -> Result<Comment> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let comment_id = Uuid::new_v4().to_string();
+        let now = Utc::now();
+        let is_reply = input.parent_comment_id.is_some();
+
+        // 댓글 생성
+        sqlx::query(
+            "INSERT INTO comments
+             (id, post_id, author_id, content, parent_comment_id, is_reply, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(&comment_id)
+        .bind(&input.post_id)
+        .bind(user_id)
+        .bind(&input.content)
+        .bind(&input.parent_comment_id)
+        .bind(is_reply)
+        .bind(now)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        // 멘션 추가
+        if let Some(mentions) = input.mentions {
+            for mentioned_user_id in mentions {
+                sqlx::query(
+                    "INSERT INTO comment_mentions (comment_id, mentioned_user_id) VALUES (?, ?)"
+                )
+                .bind(&comment_id)
+                .bind(&mentioned_user_id)
+                .execute(pool)
+                .await?;
+            }
+        }
+
+        // 포스트의 댓글 수 증가
+        sqlx::query(
+            "UPDATE feed_posts SET comments_count = comments_count + 1 WHERE id = ?"
+        )
+        .bind(&input.post_id)
+        .execute(pool)
+        .await?;
+
+        let comment: Comment = sqlx::query_as(
+            "SELECT * FROM comments WHERE id = ?"
+        )
+        .bind(&comment_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(comment)
+    }
+
+    /// 댓글 삭제
+    async fn delete_comment(&self, ctx: &Context<'_>, comment_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 댓글 조회 및 권한 확인
+        let comment: Option<Comment> = sqlx::query_as(
+            "SELECT * FROM comments WHERE id = ?"
+        )
+        .bind(&comment_id)
+        .fetch_optional(pool)
+        .await?;
+
+        let comment = comment.ok_or("Comment not found")?;
+
+        if &comment.author_id != user_id {
+            return Err("Unauthorized".into());
+        }
+
+        // 댓글 삭제
+        sqlx::query(
+            "DELETE FROM comments WHERE id = ?"
+        )
+        .bind(&comment_id)
+        .execute(pool)
+        .await?;
+
+        // 포스트의 댓글 수 감소
+        sqlx::query(
+            "UPDATE feed_posts SET comments_count = comments_count - 1 WHERE id = ?"
+        )
+        .bind(&comment.post_id)
+        .execute(pool)
+        .await?;
+
+        Ok(true)
+    }
+
+    /// 사용자 프로필 업데이트
+    async fn update_user_profile(
+        &self,
+        ctx: &Context<'_>,
+        name: Option<String>,
+        profile_image: Option<String>,
+    ) -> Result<User> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        if let Some(name) = name {
+            let initial = name.chars().next()
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "?".to_string());
+
+            sqlx::query(
+                "UPDATE users SET name = ?, initial = ?, updated_at = ? WHERE id = ?"
+            )
+            .bind(&name)
+            .bind(&initial)
+            .bind(Utc::now())
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+        }
+
+        if let Some(profile_image) = profile_image {
+            sqlx::query(
+                "UPDATE users SET profile_image = ?, updated_at = ? WHERE id = ?"
+            )
+            .bind(&profile_image)
+            .bind(Utc::now())
+            .bind(user_id)
+            .execute(pool)
+            .await?;
+        }
+
+        let user: User = sqlx::query_as(
+            "SELECT * FROM users WHERE id = ?"
+        )
+        .bind(user_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(user)
+    }
+}

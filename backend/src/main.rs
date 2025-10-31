@@ -1,0 +1,100 @@
+mod auth;
+mod db;
+mod models;
+mod schema;
+
+use actix_cors::Cors;
+use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
+use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
+use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
+use dotenv::dotenv;
+use std::env;
+
+use crate::auth::jwt::verify_jwt;
+use crate::db::{create_pool, init_db};
+use crate::schema::{create_schema, AppSchema};
+
+async fn graphql_playground() -> Result<HttpResponse> {
+    let source = playground_source(GraphQLPlaygroundConfig::new("/graphql"));
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(source))
+}
+
+async fn graphql_handler(
+    schema: web::Data<AppSchema>,
+    req: HttpRequest,
+    gql_request: GraphQLRequest,
+) -> GraphQLResponse {
+    let mut request = gql_request.into_inner();
+
+    // JWT 토큰에서 사용자 ID 추출
+    if let Some(auth_header) = req.headers().get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if auth_str.starts_with("Bearer ") {
+                let token = &auth_str[7..];
+                if let Ok(claims) = verify_jwt(token) {
+                    request = request.data(claims.sub);
+                }
+            }
+        }
+    }
+
+    schema.execute(request).await.into()
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // 환경 변수 로드
+    dotenv().ok();
+    env_logger::init();
+
+    let host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let port = env::var("SERVER_PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .expect("SERVER_PORT must be a valid port number");
+
+    log::info!("Starting Foodie GraphQL Server...");
+
+    // 데이터베이스 연결 및 초기화
+    let pool = create_pool()
+        .await
+        .expect("Failed to create database pool");
+
+    init_db(&pool)
+        .await
+        .expect("Failed to initialize database");
+
+    log::info!("Database initialized successfully");
+
+    // GraphQL 스키마 생성
+    let schema = create_schema();
+
+    log::info!("GraphQL Server running at http://{}:{}", host, port);
+    log::info!("GraphQL Playground: http://{}:{}/playground", host, port);
+
+    // HTTP 서버 시작
+    HttpServer::new(move || {
+        // CORS 설정
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
+        App::new()
+            .wrap(cors)
+            .app_data(web::Data::new(schema.clone()))
+            .app_data(web::Data::new(pool.clone()))
+            .service(
+                web::resource("/graphql")
+                    .guard(guard::Post())
+                    .to(graphql_handler),
+            )
+            .service(web::resource("/playground").guard(guard::Get()).to(graphql_playground))
+    })
+    .bind((host, port))?
+    .run()
+    .await
+}
