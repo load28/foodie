@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # pnpm 설치
+        - npm install -g pnpm@10.12.4
+        - pnpm install --frozen-lockfile
+    build:
+      commands:
+        # 환경 변수 확인 (디버깅용)
+        - echo "Building with GraphQL URI:$VITE_GRAPHQL_URI"
+        # Vite 빌드
+        - pnpm run build
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .pnpm-store/**/*
