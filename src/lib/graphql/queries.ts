@@ -237,3 +237,71 @@ export const SEARCH_FRIEND_POSTS = gql`
     }
   }
 `;
+
+// 사용자 검색
+export const SEARCH_USERS = gql`
+  query SearchUsers($query: String!, $limit: Int, $offset: Int) {
+    searchUsers(query: $query, limit: $limit, offset: $offset) {
+      id
+      name
+      email
+      initial
+      profileImage
+      status
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// 받은 친구 요청 목록
+export const GET_FRIEND_REQUESTS = gql`
+  query GetFriendRequests($limit: Int, $offset: Int) {
+    friendRequests(limit: $limit, offset: $offset) {
+      id
+      status
+      createdAt
+      updatedAt
+      requester {
+        id
+        name
+        email
+        initial
+        profileImage
+        status
+      }
+    }
+  }
+`;
+
+// 보낸 친구 요청 목록
+export const GET_SENT_FRIEND_REQUESTS = gql`
+  query GetSentFriendRequests($limit: Int, $offset: Int) {
+    sentFriendRequests(limit: $limit, offset: $offset) {
+      id
+      status
+      createdAt
+      updatedAt
+      addressee {
+        id
+        name
+        email
+        initial
+        profileImage
+        status
+      }
+    }
+  }
+`;
+
+// 친구 통계
+export const GET_FRIEND_STATS = gql`
+  query GetFriendStats {
+    friendStats {
+      userId
+      friendCount
+      pendingRequestsCount
+      updatedAt
+    }
+  }
+`;

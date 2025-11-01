@@ -678,4 +678,40 @@ impl MutationRoot {
 
         Ok(true)
     }
+
+    /// 친구 요청 취소 (보낸 요청 취소)
+    async fn cancel_friend_request(&self, ctx: &Context<'_>, request_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 요청 조회 및 권한 확인
+        let request: Option<crate::models::FriendRequest> = sqlx::query_as(
+            "SELECT * FROM friend_requests WHERE id = ? AND requester_id = ?"
+        )
+        .bind(&request_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+
+        let request = request.ok_or("Friend request not found or unauthorized")?;
+
+        if request.status != crate::models::FriendRequestStatus::Pending {
+            return Err("Can only cancel pending requests".into());
+        }
+
+        // 요청 삭제
+        sqlx::query(
+            "DELETE FROM friend_requests WHERE id = ?"
+        )
+        .bind(&request_id)
+        .execute(pool)
+        .await?;
+
+        // 수신자의 통계 업데이트 (대기 중인 요청 수 감소)
+        self.update_friend_stats(&request.addressee_id, pool).await?;
+
+        Ok(true)
+    }
 }

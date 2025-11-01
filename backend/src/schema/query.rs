@@ -455,6 +455,54 @@ impl QueryRoot {
             total: result.total,
         })
     }
+
+    /// 사용자 검색 (이름 또는 이메일로 검색)
+    async fn search_users(
+        &self,
+        ctx: &Context<'_>,
+        query: String,
+        #[graphql(default = 20)] limit: i64,
+        #[graphql(default = 0)] offset: i64,
+    ) -> Result<Vec<User>> {
+        let current_user_id = ctx.data_opt::<String>();
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let search_pattern = format!("%{}%", query);
+
+        // 현재 로그인한 사용자는 검색 결과에서 제외
+        let users = if let Some(user_id) = current_user_id {
+            sqlx::query_as::<_, User>(
+                "SELECT * FROM users
+                 WHERE (name LIKE ? OR email LIKE ?)
+                 AND id != ?
+                 ORDER BY name ASC
+                 LIMIT ? OFFSET ?"
+            )
+            .bind(&search_pattern)
+            .bind(&search_pattern)
+            .bind(user_id)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?
+        } else {
+            // 로그인하지 않은 경우에도 검색 가능
+            sqlx::query_as::<_, User>(
+                "SELECT * FROM users
+                 WHERE name LIKE ? OR email LIKE ?
+                 ORDER BY name ASC
+                 LIMIT ? OFFSET ?"
+            )
+            .bind(&search_pattern)
+            .bind(&search_pattern)
+            .bind(limit)
+            .bind(offset)
+            .fetch_all(pool)
+            .await?
+        };
+
+        Ok(users)
+    }
 }
 
 #[derive(SimpleObject)]
