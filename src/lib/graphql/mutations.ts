@@ -137,10 +137,31 @@ export const UPDATE_USER_PROFILE = gql`
   }
 `;
 
-// 친구 추가
-export const ADD_FRIEND = gql`
-  mutation AddFriend($friendId: String!) {
-    addFriend(friendId: $friendId)
+// 친구 요청 보내기
+export const SEND_FRIEND_REQUEST = gql`
+  mutation SendFriendRequest($addresseeId: String!) {
+    sendFriendRequest(addresseeId: $addresseeId)
+  }
+`;
+
+// 친구 요청 수락
+export const ACCEPT_FRIEND_REQUEST = gql`
+  mutation AcceptFriendRequest($requestId: String!) {
+    acceptFriendRequest(requestId: $requestId)
+  }
+`;
+
+// 친구 요청 거절
+export const REJECT_FRIEND_REQUEST = gql`
+  mutation RejectFriendRequest($requestId: String!) {
+    rejectFriendRequest(requestId: $requestId)
+  }
+`;
+
+// 친구 요청 취소
+export const CANCEL_FRIEND_REQUEST = gql`
+  mutation CancelFriendRequest($requestId: String!) {
+    cancelFriendRequest(requestId: $requestId)
   }
 `;
 
