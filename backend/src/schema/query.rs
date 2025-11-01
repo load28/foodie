@@ -101,45 +101,166 @@ impl QueryRoot {
         Ok(comments)
     }
 
-    /// 친구 목록 조회
-    async fn friends(&self, ctx: &Context<'_>) -> Result<Vec<User>> {
+    /// 친구 목록 조회 (캐시 적용, 페이지네이션)
+    async fn friends(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = 100)] limit: i64,
+        #[graphql(default = 0)] offset: i64,
+    ) -> Result<Vec<User>> {
         let user_id = ctx.data_opt::<String>()
             .ok_or("Unauthorized")?;
 
         let pool = ctx.data::<SqlitePool>()?;
 
+        // 정규화된 쿼리: user_id가 양쪽에 있을 수 있음
         let friends = sqlx::query_as::<_, User>(
             "SELECT u.* FROM users u
-             INNER JOIN friendships f ON u.id = f.friend_id
-             WHERE f.user_id = ?
-             ORDER BY u.name ASC"
+             WHERE u.id IN (
+                 SELECT CASE
+                     WHEN f.user_id = ? THEN f.friend_id
+                     ELSE f.user_id
+                 END AS friend_user_id
+                 FROM friendships f
+                 WHERE f.user_id = ? OR f.friend_id = ?
+             )
+             ORDER BY u.name ASC
+             LIMIT ? OFFSET ?"
         )
         .bind(user_id)
+        .bind(user_id)
+        .bind(user_id)
+        .bind(limit)
+        .bind(offset)
         .fetch_all(pool)
         .await?;
 
         Ok(friends)
     }
 
-    /// 특정 사용자가 친구인지 확인
-    async fn is_friend(&self, ctx: &Context<'_>, user_id: String) -> Result<bool> {
-        let current_user_id = ctx.data_opt::<String>()
+    /// 친구 요청 목록 조회 (받은 요청)
+    async fn friend_requests(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = 50)] limit: i64,
+        #[graphql(default = 0)] offset: i64,
+    ) -> Result<Vec<crate::models::FriendRequest>> {
+        let user_id = ctx.data_opt::<String>()
             .ok_or("Unauthorized")?;
 
         let pool = ctx.data::<SqlitePool>()?;
 
+        let requests = sqlx::query_as::<_, crate::models::FriendRequest>(
+            "SELECT * FROM friend_requests
+             WHERE addressee_id = ? AND status = 'PENDING'
+             ORDER BY created_at DESC
+             LIMIT ? OFFSET ?"
+        )
+        .bind(user_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(requests)
+    }
+
+    /// 보낸 친구 요청 목록
+    async fn sent_friend_requests(
+        &self,
+        ctx: &Context<'_>,
+        #[graphql(default = 50)] limit: i64,
+        #[graphql(default = 0)] offset: i64,
+    ) -> Result<Vec<crate::models::FriendRequest>> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let requests = sqlx::query_as::<_, crate::models::FriendRequest>(
+            "SELECT * FROM friend_requests
+             WHERE requester_id = ? AND status = 'PENDING'
+             ORDER BY created_at DESC
+             LIMIT ? OFFSET ?"
+        )
+        .bind(user_id)
+        .bind(limit)
+        .bind(offset)
+        .fetch_all(pool)
+        .await?;
+
+        Ok(requests)
+    }
+
+    /// 친구 통계 조회
+    async fn friend_stats(&self, ctx: &Context<'_>) -> Result<Option<crate::models::FriendStats>> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        let stats = sqlx::query_as::<_, crate::models::FriendStats>(
+            "SELECT * FROM friend_stats WHERE user_id = ?"
+        )
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+
+        Ok(stats)
+    }
+
+    /// 특정 사용자가 친구인지 확인 (캐시 적용)
+    async fn is_friend(&self, ctx: &Context<'_>, friend_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        // 캐시 먼저 확인
+        if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            if let Ok(Some(result)) = cache.is_friend(user_id, &friend_id).await {
+                return Ok(result);
+            }
+        }
+
+        // 캐시 미스: DB 조회
+        let pool = ctx.data::<SqlitePool>()?;
+        let (uid, fid) = crate::models::Friendship::normalize_ids(user_id, &friend_id);
+
         let result = sqlx::query_scalar::<_, i64>(
             "SELECT COUNT(*) FROM friendships WHERE user_id = ? AND friend_id = ?"
         )
-        .bind(current_user_id)
-        .bind(&user_id)
+        .bind(uid)
+        .bind(fid)
         .fetch_one(pool)
         .await?;
 
-        Ok(result > 0)
+        let is_friend = result > 0;
+
+        // 캐시 업데이트
+        if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            // 친구 ID 목록을 캐시에 저장하기 위해 조회
+            if is_friend {
+                let friend_ids: Vec<String> = sqlx::query_scalar(
+                    "SELECT CASE
+                        WHEN user_id = ? THEN friend_id
+                        ELSE user_id
+                    END AS friend_user_id
+                    FROM friendships
+                    WHERE user_id = ? OR friend_id = ?"
+                )
+                .bind(user_id)
+                .bind(user_id)
+                .bind(user_id)
+                .fetch_all(pool)
+                .await?;
+
+                let _ = cache.set_friend_ids(user_id, &friend_ids).await;
+            }
+        }
+
+        Ok(is_friend)
     }
 
-    /// 친구의 게시물 조회
+    /// 친구의 게시물 조회 (캐시 적용)
     async fn friend_posts(
         &self,
         ctx: &Context<'_>,
@@ -151,18 +272,68 @@ impl QueryRoot {
 
         let pool = ctx.data::<SqlitePool>()?;
 
-        let posts = sqlx::query_as::<_, FeedPost>(
-            "SELECT fp.* FROM feed_posts fp
-             INNER JOIN friendships f ON fp.author_id = f.friend_id
-             WHERE f.user_id = ?
-             ORDER BY fp.created_at DESC
-             LIMIT ? OFFSET ?"
-        )
-        .bind(user_id)
-        .bind(limit)
-        .bind(offset)
-        .fetch_all(pool)
-        .await?;
+        // 캐시에서 친구 ID 목록 조회
+        let friend_ids: Vec<String> = if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            if let Ok(Some(ids)) = cache.get_friend_ids(user_id).await {
+                ids
+            } else {
+                // 캐시 미스: DB에서 조회
+                let ids: Vec<String> = sqlx::query_scalar(
+                    "SELECT CASE
+                        WHEN user_id = ? THEN friend_id
+                        ELSE user_id
+                    END AS friend_user_id
+                    FROM friendships
+                    WHERE user_id = ? OR friend_id = ?"
+                )
+                .bind(user_id)
+                .bind(user_id)
+                .bind(user_id)
+                .fetch_all(pool)
+                .await?;
+
+                // 캐시에 저장
+                let _ = cache.set_friend_ids(user_id, &ids).await;
+                ids
+            }
+        } else {
+            // 캐시 사용 불가: DB에서 직접 조회
+            sqlx::query_scalar(
+                "SELECT CASE
+                    WHEN user_id = ? THEN friend_id
+                    ELSE user_id
+                END AS friend_user_id
+                FROM friendships
+                WHERE user_id = ? OR friend_id = ?"
+            )
+            .bind(user_id)
+            .bind(user_id)
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?
+        };
+
+        if friend_ids.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // 친구들의 게시물 조회
+        let placeholders = friend_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let query = format!(
+            "SELECT * FROM feed_posts
+             WHERE author_id IN ({})
+             ORDER BY created_at DESC
+             LIMIT ? OFFSET ?",
+            placeholders
+        );
+
+        let mut query_builder = sqlx::query_as::<_, FeedPost>(&query);
+        for friend_id in &friend_ids {
+            query_builder = query_builder.bind(friend_id);
+        }
+        query_builder = query_builder.bind(limit).bind(offset);
+
+        let posts = query_builder.fetch_all(pool).await?;
 
         Ok(posts)
     }
@@ -202,7 +373,7 @@ impl QueryRoot {
         })
     }
 
-    /// 친구 게시물 검색 (Elasticsearch)
+    /// 친구 게시물 검색 (Elasticsearch + 캐시)
     async fn search_friend_posts(
         &self,
         ctx: &Context<'_>,
@@ -214,13 +385,46 @@ impl QueryRoot {
         let search_service = ctx.data::<SearchService>()?;
         let pool = ctx.data::<SqlitePool>()?;
 
-        // 친구 ID 목록 조회
-        let friend_ids: Vec<String> = sqlx::query_scalar(
-            "SELECT friend_id FROM friendships WHERE user_id = ?"
-        )
-        .bind(user_id)
-        .fetch_all(pool)
-        .await?;
+        // 캐시에서 친구 ID 목록 조회
+        let friend_ids: Vec<String> = if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            if let Ok(Some(ids)) = cache.get_friend_ids(user_id).await {
+                ids
+            } else {
+                // 캐시 미스: DB에서 조회
+                let ids: Vec<String> = sqlx::query_scalar(
+                    "SELECT CASE
+                        WHEN user_id = ? THEN friend_id
+                        ELSE user_id
+                    END AS friend_user_id
+                    FROM friendships
+                    WHERE user_id = ? OR friend_id = ?"
+                )
+                .bind(user_id)
+                .bind(user_id)
+                .bind(user_id)
+                .fetch_all(pool)
+                .await?;
+
+                // 캐시에 저장
+                let _ = cache.set_friend_ids(user_id, &ids).await;
+                ids
+            }
+        } else {
+            // 캐시 사용 불가: DB에서 직접 조회
+            sqlx::query_scalar(
+                "SELECT CASE
+                    WHEN user_id = ? THEN friend_id
+                    ELSE user_id
+                END AS friend_user_id
+                FROM friendships
+                WHERE user_id = ? OR friend_id = ?"
+            )
+            .bind(user_id)
+            .bind(user_id)
+            .bind(user_id)
+            .fetch_all(pool)
+            .await?
+        };
 
         if friend_ids.is_empty() {
             return Ok(SearchPostsResult {

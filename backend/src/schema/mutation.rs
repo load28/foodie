@@ -14,6 +14,105 @@ use crate::session::{generate_session_id, RedisSessionStore, Session};
 
 pub struct MutationRoot;
 
+impl MutationRoot {
+    /// 친구 요청 수락 내부 로직
+    async fn accept_friend_request_internal(&self, ctx: &Context<'_>, request_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 요청 조회
+        let request: Option<crate::models::FriendRequest> = sqlx::query_as(
+            "SELECT * FROM friend_requests WHERE id = ? AND addressee_id = ?"
+        )
+        .bind(&request_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+
+        let request = request.ok_or("Friend request not found")?;
+
+        if request.status != crate::models::FriendRequestStatus::Pending {
+            return Err("Friend request is not pending".into());
+        }
+
+        // 친구 관계 생성 (정규화된 ID 사용)
+        let (uid, fid) = crate::models::Friendship::normalize_ids(&request.requester_id, &request.addressee_id);
+        let now = Utc::now();
+
+        sqlx::query(
+            "INSERT INTO friendships (user_id, friend_id, created_at) VALUES (?, ?, ?)"
+        )
+        .bind(uid)
+        .bind(fid)
+        .bind(now)
+        .execute(pool)
+        .await?;
+
+        // 요청 상태 업데이트
+        sqlx::query(
+            "UPDATE friend_requests SET status = 'ACCEPTED', updated_at = ? WHERE id = ?"
+        )
+        .bind(now)
+        .bind(&request_id)
+        .execute(pool)
+        .await?;
+
+        // 통계 업데이트
+        self.update_friend_stats(&request.requester_id, pool).await?;
+        self.update_friend_stats(&request.addressee_id, pool).await?;
+
+        // 캐시 무효화
+        if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            let _ = cache.invalidate_both_users(&request.requester_id, &request.addressee_id).await;
+        }
+
+        Ok(true)
+    }
+
+    /// 친구 통계 업데이트
+    async fn update_friend_stats(&self, user_id: &str, pool: &SqlitePool) -> Result<()> {
+        // 친구 수 계산
+        let friend_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM friendships WHERE user_id = ? OR friend_id = ?"
+        )
+        .bind(user_id)
+        .bind(user_id)
+        .fetch_one(pool)
+        .await?;
+
+        // 대기 중인 요청 수
+        let pending_count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM friend_requests WHERE addressee_id = ? AND status = 'PENDING'"
+        )
+        .bind(user_id)
+        .fetch_one(pool)
+        .await?;
+
+        // 통계 업데이트 (upsert)
+        sqlx::query(
+            "INSERT INTO friend_stats (user_id, friend_count, pending_requests_count, updated_at)
+             VALUES (?, ?, ?, ?)
+             ON CONFLICT(user_id) DO UPDATE SET
+             friend_count = ?,
+             pending_requests_count = ?,
+             updated_at = ?"
+        )
+        .bind(user_id)
+        .bind(friend_count)
+        .bind(pending_count)
+        .bind(Utc::now())
+        .bind(friend_count)
+        .bind(pending_count)
+        .bind(Utc::now())
+        .execute(pool)
+        .await?;
+
+        Ok(())
+    }
+}
+
 #[Object]
 impl MutationRoot {
     /// 회원가입
@@ -426,35 +525,36 @@ impl MutationRoot {
         Ok(user)
     }
 
-    /// 친구 추가
-    async fn add_friend(&self, ctx: &Context<'_>, friend_id: String) -> Result<bool> {
+    /// 친구 요청 보내기
+    async fn send_friend_request(&self, ctx: &Context<'_>, addressee_id: String) -> Result<bool> {
         let user_id = ctx.data_opt::<String>()
             .ok_or("Unauthorized")?;
 
-        if user_id == &friend_id {
-            return Err("Cannot add yourself as a friend".into());
+        if user_id == &addressee_id {
+            return Err("Cannot send friend request to yourself".into());
         }
 
         let pool = ctx.data::<SqlitePool>()?;
 
-        // 친구가 존재하는지 확인
-        let friend_exists: Option<(String,)> = sqlx::query_as(
+        // 상대방이 존재하는지 확인
+        let addressee_exists: Option<(String,)> = sqlx::query_as(
             "SELECT id FROM users WHERE id = ?"
         )
-        .bind(&friend_id)
+        .bind(&addressee_id)
         .fetch_optional(pool)
         .await?;
 
-        if friend_exists.is_none() {
+        if addressee_exists.is_none() {
             return Err("User not found".into());
         }
 
         // 이미 친구인지 확인
+        let (uid, fid) = crate::models::Friendship::normalize_ids(user_id, &addressee_id);
         let existing_friendship: Option<(String,)> = sqlx::query_as(
             "SELECT user_id FROM friendships WHERE user_id = ? AND friend_id = ?"
         )
-        .bind(user_id)
-        .bind(&friend_id)
+        .bind(uid)
+        .bind(fid)
         .fetch_optional(pool)
         .await?;
 
@@ -462,26 +562,89 @@ impl MutationRoot {
             return Err("Already friends".into());
         }
 
+        // 기존 요청 확인
+        let existing_request: Option<(String,)> = sqlx::query_as(
+            "SELECT id FROM friend_requests WHERE requester_id = ? AND addressee_id = ?"
+        )
+        .bind(user_id)
+        .bind(&addressee_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if existing_request.is_some() {
+            return Err("Friend request already sent".into());
+        }
+
+        // 역방향 요청 확인 (상대방이 이미 요청을 보낸 경우)
+        let reverse_request: Option<crate::models::FriendRequest> = sqlx::query_as(
+            "SELECT * FROM friend_requests WHERE requester_id = ? AND addressee_id = ? AND status = 'PENDING'"
+        )
+        .bind(&addressee_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some(req) = reverse_request {
+            // 자동으로 수락하고 친구 관계 생성
+            return self.accept_friend_request_internal(ctx, req.id).await;
+        }
+
+        // 새 친구 요청 생성
+        let request_id = uuid::Uuid::new_v4().to_string();
         let now = Utc::now();
 
-        // 양방향 친구 관계 생성
         sqlx::query(
-            "INSERT INTO friendships (user_id, friend_id, created_at) VALUES (?, ?, ?)"
+            "INSERT INTO friend_requests (id, requester_id, addressee_id, status, created_at, updated_at)
+             VALUES (?, ?, ?, 'PENDING', ?, ?)"
         )
+        .bind(&request_id)
         .bind(user_id)
-        .bind(&friend_id)
+        .bind(&addressee_id)
+        .bind(now)
         .bind(now)
         .execute(pool)
         .await?;
 
-        sqlx::query(
-            "INSERT INTO friendships (user_id, friend_id, created_at) VALUES (?, ?, ?)"
+        // 통계 업데이트
+        self.update_friend_stats(&addressee_id, pool).await?;
+
+        Ok(true)
+    }
+
+    /// 친구 요청 수락
+    async fn accept_friend_request(&self, ctx: &Context<'_>, request_id: String) -> Result<bool> {
+        self.accept_friend_request_internal(ctx, request_id).await
+    }
+
+    /// 친구 요청 거절
+    async fn reject_friend_request(&self, ctx: &Context<'_>, request_id: String) -> Result<bool> {
+        let user_id = ctx.data_opt::<String>()
+            .ok_or("Unauthorized")?;
+
+        let pool = ctx.data::<SqlitePool>()?;
+
+        // 요청 조회
+        let request: Option<crate::models::FriendRequest> = sqlx::query_as(
+            "SELECT * FROM friend_requests WHERE id = ? AND addressee_id = ?"
         )
-        .bind(&friend_id)
+        .bind(&request_id)
         .bind(user_id)
-        .bind(now)
+        .fetch_optional(pool)
+        .await?;
+
+        let request = request.ok_or("Friend request not found")?;
+
+        // 요청 상태 업데이트
+        sqlx::query(
+            "UPDATE friend_requests SET status = 'REJECTED', updated_at = ? WHERE id = ?"
+        )
+        .bind(Utc::now())
+        .bind(&request_id)
         .execute(pool)
         .await?;
+
+        // 통계 업데이트
+        self.update_friend_stats(user_id, pool).await?;
 
         Ok(true)
     }
@@ -493,22 +656,25 @@ impl MutationRoot {
 
         let pool = ctx.data::<SqlitePool>()?;
 
-        // 양방향 친구 관계 삭제
-        sqlx::query(
-            "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?"
-        )
-        .bind(user_id)
-        .bind(&friend_id)
-        .execute(pool)
-        .await?;
+        // 정규화된 ID로 친구 관계 삭제
+        let (uid, fid) = crate::models::Friendship::normalize_ids(user_id, &friend_id);
 
         sqlx::query(
             "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?"
         )
-        .bind(&friend_id)
-        .bind(user_id)
+        .bind(uid)
+        .bind(fid)
         .execute(pool)
         .await?;
+
+        // 통계 업데이트
+        self.update_friend_stats(user_id, pool).await?;
+        self.update_friend_stats(&friend_id, pool).await?;
+
+        // 캐시 무효화
+        if let Ok(cache) = ctx.data::<crate::cache::FriendCache>() {
+            let _ = cache.invalidate_both_users(user_id, &friend_id).await;
+        }
 
         Ok(true)
     }
