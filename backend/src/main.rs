@@ -1,4 +1,5 @@
 mod auth;
+mod cache;
 mod db;
 mod models;
 mod schema;
@@ -13,6 +14,7 @@ use dotenv::dotenv;
 use std::env;
 
 use crate::auth::jwt::verify_jwt;
+use crate::cache::FriendCache;
 use crate::db::{create_pool, init_db};
 use crate::schema::{create_schema, AppSchema};
 use crate::search::{ElasticsearchClient, SearchService};
@@ -92,6 +94,13 @@ async fn main() -> std::io::Result<()> {
 
     log::info!("Redis session store initialized successfully");
 
+    // Friend Cache 초기화 (Redis 기반)
+    let redis_url = env::var("REDIS_URL").unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+    let friend_cache = FriendCache::new(&redis_url)
+        .expect("Failed to create friend cache");
+
+    log::info!("Friend cache initialized successfully");
+
     // Elasticsearch 초기화
     let es_url = env::var("ELASTICSEARCH_URL").unwrap_or_else(|_| "http://127.0.0.1:9200".to_string());
     let es_index = env::var("ELASTICSEARCH_INDEX").unwrap_or_else(|_| "foodie_posts".to_string());
@@ -129,6 +138,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(session_store.clone()))
             .app_data(web::Data::new(search_service.clone()))
+            .app_data(web::Data::new(friend_cache.clone()))
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())
