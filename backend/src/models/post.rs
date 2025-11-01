@@ -3,6 +3,30 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
+/// 이미지 포맷별 URL
+///
+/// 엔터프라이즈 전략: 브라우저가 최적 포맷 선택 (Picture 엘리먼트)
+#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
+pub struct ImageFormatUrls {
+    /// WebP 포맷 URL (30% 더 나은 압축)
+    pub webp: String,
+    /// JPEG 포맷 URL (폴백용)
+    pub jpeg: String,
+}
+
+/// 반응형 이미지 URL 세트
+///
+/// 엔터프라이즈 전략: 다중 해상도로 네트워크 대역폭 최적화
+#[derive(Debug, Clone, Serialize, Deserialize, SimpleObject)]
+pub struct ImageUrls {
+    /// 썸네일 (300px) - 피드 목록용
+    pub thumbnail: ImageFormatUrls,
+    /// 중간 (800px) - 모바일 상세 보기
+    pub medium: ImageFormatUrls,
+    /// 대형 (1920px) - 데스크톱 고해상도
+    pub large: ImageFormatUrls,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq, Enum, Copy, sqlx::Type)]
 #[sqlx(rename_all = "UPPERCASE")]
 pub enum Category {
@@ -29,6 +53,8 @@ pub struct FeedPost {
     pub location: String,
     pub rating: f64,
     pub food_image: Option<String>,
+    /// 다중 포맷/해상도 이미지 URL (JSON 문자열)
+    pub image_urls: Option<String>,
     pub category: Category,
     pub tags: String, // JSON string
     pub likes: i64,
@@ -72,6 +98,17 @@ impl FeedPost {
 
     async fn food_image(&self) -> Option<&str> {
         self.food_image.as_deref()
+    }
+
+    /// 반응형 이미지 URL (다중 포맷/해상도)
+    ///
+    /// 엔터프라이즈 전략: Picture 엘리먼트에서 사용
+    async fn image_urls(&self) -> Option<ImageUrls> {
+        if let Some(ref json_str) = self.image_urls {
+            serde_json::from_str(json_str).ok()
+        } else {
+            None
+        }
     }
 
     async fn category(&self) -> Category {

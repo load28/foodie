@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS feed_posts (
     location TEXT NOT NULL,
     rating REAL NOT NULL CHECK (rating >= 0 AND rating <= 5),
     food_image TEXT,
+    image_urls TEXT, -- JSON: 다중 포맷/해상도 이미지 URL (엔터프라이즈 전략)
     category TEXT NOT NULL CHECK (category IN ('KOREAN', 'WESTERN', 'CHINESE', 'JAPANESE', 'CAFE', 'DESSERT')),
     tags TEXT NOT NULL, -- JSON array stored as text
     likes INTEGER DEFAULT 0,

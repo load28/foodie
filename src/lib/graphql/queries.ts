@@ -13,6 +13,20 @@ export const GET_FEED_POSTS = gql`
         category
         tags
         foodImage
+        imageUrls {
+          thumbnail {
+            webp
+            jpeg
+          }
+          medium {
+            webp
+            jpeg
+          }
+          large {
+            webp
+            jpeg
+          }
+        }
         authorId
         likes
         comments

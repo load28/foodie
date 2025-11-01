@@ -59,6 +59,20 @@ export const CREATE_FEED_POST = gql`
       category
       tags
       foodImage
+      imageUrls {
+        thumbnail {
+          webp
+          jpeg
+        }
+        medium {
+          webp
+          jpeg
+        }
+        large {
+          webp
+          jpeg
+        }
+      }
       authorId
       likes
       comments

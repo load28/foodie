@@ -23,6 +23,15 @@
 
 .ds-feed-page__header-btn {
   @extend .ds-feed-screen__header-btn;
+
+  &--create {
+    background-color: #4CAF50;
+    color: white;
+
+    &:hover {
+      background-color: #45a049;
+    }
+  }
 }
 
 .ds-feed-page__container {
