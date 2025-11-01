@@ -1,6 +1,7 @@
 import React, { forwardRef } from 'react';
 import { Heart, MessageCircle, Share } from 'lucide-react';
 import Avatar from '../Avatar/Avatar';
+import { ResponsiveImage, ImageUrls } from '../ResponsiveImage/ResponsiveImage';
 import './FeedCard.scss';
 
 interface FeedCardProps {
@@ -19,11 +20,12 @@ interface FeedCardProps {
   isLiked?: boolean;
   tags?: string[];
   category?: string;
-  image?: string;
+  /** 반응형 이미지 URL (다중 포맷/해상도) */
+  imageUrls?: ImageUrls;
   variant?: 'default' | 'detailed';
 }
 
-const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({ 
+const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({
   authorName = '작성자',
   timeAgo = '방금 전',
   title = '맛집 후기',
@@ -39,9 +41,9 @@ const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({
   isLiked = false,
   tags = [],
   category,
-  image,
+  imageUrls,
   variant = 'default',
-  ...props 
+  ...props
 }, ref) => {
   const ratingValue = typeof rating === 'string' ? parseFloat(rating) : rating;
   return (
@@ -100,9 +102,13 @@ const FeedCard = forwardRef<HTMLDivElement, FeedCardProps>(({
           </div>
         )}
         
-        {variant === 'detailed' && image && (
+        {imageUrls && (
           <div className="ds-feed-card__image">
-            {image}
+            <ResponsiveImage
+              imageUrls={imageUrls}
+              alt={title || '음식 이미지'}
+              loading={variant === 'detailed' ? 'eager' : 'lazy'}
+            />
           </div>
         )}
       </div>

@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Search, Bell } from 'lucide-react';
+import { Search, Bell, Plus } from 'lucide-react';
 import FeedCard from '../../components/FeedCard/FeedCard';
 import CommentSheet, { Comment } from '../../components/CommentSheet/CommentSheet';
+import { CreatePostModal } from '../../components/CreatePostModal/CreatePostModal';
 import { GET_FEED_POSTS } from '../../lib/graphql/queries';
 import { TOGGLE_POST_LIKE } from '../../lib/graphql/mutations';
 import './FeedPage.scss';
@@ -13,6 +14,7 @@ const FeedPage: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [likedPosts, setLikedPosts] = useState(new Set<string>());
   const [activeCommentSheet, setActiveCommentSheet] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
 
   const filters = [
@@ -26,7 +28,7 @@ const FeedPage: React.FC = () => {
   ];
 
   // 피드 데이터 조회
-  const { data, loading, error, fetchMore } = useQuery(GET_FEED_POSTS, {
+  const { data, loading, error, fetchMore, refetch } = useQuery(GET_FEED_POSTS, {
     variables: {
       limit: POSTS_PER_PAGE,
       offset: 0,
@@ -152,6 +154,13 @@ const FeedPage: React.FC = () => {
             FoodieShare
           </a>
           <div className="ds-feed-page__header-actions">
+            <button
+              className="ds-feed-page__header-btn ds-feed-page__header-btn--create"
+              onClick={() => setIsCreateModalOpen(true)}
+              aria-label="게시물 작성"
+            >
+              <Plus size={20} />
+            </button>
             <button className="ds-feed-page__header-btn" aria-label="검색">
               <Search size={20} />
             </button>
@@ -207,7 +216,7 @@ const FeedPage: React.FC = () => {
                   onShare={() => {}}
                   tags={post.tags}
                   category={post.category}
-                  image={post.foodImage}
+                  imageUrls={post.imageUrls}
                 />
               ))}
 
@@ -235,6 +244,13 @@ const FeedPage: React.FC = () => {
           postId={activeCommentSheet}
         />
       )}
+
+      {/* 게시물 작성 모달 */}
+      <CreatePostModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => refetch()}
+      />
     </div>
   );
 };

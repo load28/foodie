@@ -5,6 +5,7 @@ mod models;
 mod schema;
 mod search;
 mod session;
+mod storage;
 
 use actix_cors::Cors;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer, Result};
@@ -19,6 +20,7 @@ use crate::db::{create_pool, init_db};
 use crate::schema::{create_schema, AppSchema};
 use crate::search::{ElasticsearchClient, SearchService};
 use crate::session::{middleware, RedisSessionStore};
+use crate::storage::S3Client;
 
 async fn graphql_playground() -> Result<HttpResponse> {
     let source = playground_source(GraphQLPlaygroundConfig::new("/graphql"));
@@ -117,6 +119,13 @@ async fn main() -> std::io::Result<()> {
         log::info!("Elasticsearch index initialized successfully");
     }
 
+    // S3 클라이언트 초기화 (이미지 저장)
+    let s3_client = S3Client::new()
+        .await
+        .expect("Failed to create S3 client");
+
+    log::info!("S3 client initialized successfully");
+
     // GraphQL 스키마 생성
     let schema = create_schema();
 
@@ -139,6 +148,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(session_store.clone()))
             .app_data(web::Data::new(search_service.clone()))
             .app_data(web::Data::new(friend_cache.clone()))
+            .app_data(web::Data::new(s3_client.clone()))
             .service(
                 web::resource("/graphql")
                     .guard(guard::Post())

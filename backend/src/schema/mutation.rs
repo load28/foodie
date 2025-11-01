@@ -276,10 +276,77 @@ impl MutationRoot {
         let now = Utc::now();
         let tags_json = serde_json::to_string(&input.tags)?;
 
+        // 엔터프라이즈 이미지 처리: 다중 포맷/해상도 생성 + S3 업로드
+        let image_urls_json = if let Some(ref data_uri) = input.food_image {
+            use crate::storage::{ImageProcessor, ImageVariant, OutputFormat};
+            use crate::models::{ImageUrls, ImageFormatUrls};
+
+            // Base64 디코딩
+            let image_data = ImageProcessor::decode_data_uri(data_uri)
+                .map_err(|e| format!("Failed to decode image: {}", e))?;
+
+            // 모든 변형 생성 (3 해상도 x 2 포맷 = 6개)
+            let processed_images = ImageProcessor::process_all_variants(&image_data)
+                .map_err(|e| format!("Failed to process images: {}", e))?;
+
+            // S3 클라이언트
+            let s3_client = ctx.data::<crate::storage::S3Client>()?;
+
+            // 각 변형별로 S3에 업로드
+            let mut url_map = std::collections::HashMap::new();
+
+            for img in processed_images {
+                let key = ImageProcessor::generate_s3_key(
+                    user_id,
+                    &post_id,
+                    img.variant,
+                    img.format,
+                );
+
+                let url = s3_client.upload(&key, img.data, img.format.content_type())
+                    .await
+                    .map_err(|e| format!("Failed to upload to S3: {}", e))?;
+
+                url_map.insert((img.variant, img.format), url);
+            }
+
+            // ImageUrls 구조체 생성
+            let image_urls = ImageUrls {
+                thumbnail: ImageFormatUrls {
+                    webp: url_map.get(&(ImageVariant::Thumbnail, OutputFormat::WebP))
+                        .ok_or("Missing thumbnail WebP")?
+                        .clone(),
+                    jpeg: url_map.get(&(ImageVariant::Thumbnail, OutputFormat::Jpeg))
+                        .ok_or("Missing thumbnail JPEG")?
+                        .clone(),
+                },
+                medium: ImageFormatUrls {
+                    webp: url_map.get(&(ImageVariant::Medium, OutputFormat::WebP))
+                        .ok_or("Missing medium WebP")?
+                        .clone(),
+                    jpeg: url_map.get(&(ImageVariant::Medium, OutputFormat::Jpeg))
+                        .ok_or("Missing medium JPEG")?
+                        .clone(),
+                },
+                large: ImageFormatUrls {
+                    webp: url_map.get(&(ImageVariant::Large, OutputFormat::WebP))
+                        .ok_or("Missing large WebP")?
+                        .clone(),
+                    jpeg: url_map.get(&(ImageVariant::Large, OutputFormat::Jpeg))
+                        .ok_or("Missing large JPEG")?
+                        .clone(),
+                },
+            };
+
+            Some(serde_json::to_string(&image_urls)?)
+        } else {
+            None
+        };
+
         sqlx::query(
             "INSERT INTO feed_posts
-             (id, author_id, title, content, location, rating, food_image, category, tags, likes, comments_count, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)"
+             (id, author_id, title, content, location, rating, food_image, image_urls, category, tags, likes, comments_count, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)"
         )
         .bind(&post_id)
         .bind(user_id)
@@ -288,6 +355,7 @@ impl MutationRoot {
         .bind(&input.location)
         .bind(input.rating)
         .bind(&input.food_image)
+        .bind(&image_urls_json)
         .bind(input.category)
         .bind(&tags_json)
         .bind(now)
