@@ -47,6 +47,37 @@ export const LOGOUT = gql`
   }
 `;
 
+// 카카오 로그인 URL 생성
+export const GENERATE_KAKAO_LOGIN_URL = gql`
+  mutation GenerateKakaoLoginUrl {
+    generateKakaoLoginUrl {
+      url
+      state
+    }
+  }
+`;
+
+// 카카오 로그인
+export const LOGIN_WITH_KAKAO = gql`
+  mutation LoginWithKakao($input: KakaoLoginInput!) {
+    loginWithKakao(input: $input) {
+      token
+      sessionId
+      isNewUser
+      user {
+        id
+        email
+        name
+        initial
+        profileImage
+        status
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
 // 피드 포스트 생성
 export const CREATE_FEED_POST = gql`
   mutation CreateFeedPost($input: CreateFeedPostInput!) {

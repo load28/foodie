@@ -19,12 +19,16 @@ pub enum UserStatus {
 pub struct User {
     pub id: String,
     #[graphql(skip)]
-    pub password_hash: String,
-    pub email: String,
+    pub password_hash: Option<String>,  // 카카오 로그인 시 NULL
+    pub email: Option<String>,  // 카카오 로그인 시 카카오 이메일
     pub name: String,
     pub initial: String,
     pub profile_image: Option<String>,
     pub status: UserStatus,
+    #[graphql(skip)]
+    pub login_method: Option<String>,  // 'kakao' or 'email'
+    #[graphql(skip)]
+    pub kakao_id: Option<String>,  // 카카오 회원번호
     #[graphql(skip)]
     pub created_at: DateTime<Utc>,
     #[graphql(skip)]
@@ -59,4 +63,20 @@ pub struct LoginInput {
 pub struct AuthPayload {
     pub user: User,
     pub token: String,
+    #[graphql(skip_output_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    #[graphql(skip_output_if = "Option::is_none")]
+    pub is_new_user: Option<bool>,
+}
+
+#[derive(Debug, SimpleObject)]
+pub struct KakaoLoginUrl {
+    pub url: String,
+    pub state: String,
+}
+
+#[derive(Debug, InputObject)]
+pub struct KakaoLoginInput {
+    pub code: String,
+    pub state: String,
 }
