@@ -5,9 +5,11 @@ use uuid::Uuid;
 
 use crate::auth::{hash_password, verify_password};
 use crate::auth::jwt::create_jwt;
+use crate::auth::oauth::{KakaoOAuthClient, StateManager, TokenEncryption};
 use crate::models::{
     AuthPayload, Comment, CreateCommentInput, CreateFeedPostInput, CreateUserInput,
-    FeedPost, LoginInput, User, UserStatus,
+    FeedPost, LoginInput, User, UserStatus, KakaoLoginUrl, KakaoLoginInput,
+    CreateOAuthProvider, OAuthProvider, log_success, log_failure,
 };
 use crate::search::SearchService;
 use crate::session::{generate_session_id, RedisSessionStore, Session};
@@ -781,5 +783,223 @@ impl MutationRoot {
         self.update_friend_stats(&request.addressee_id, pool).await?;
 
         Ok(true)
+    }
+
+    /// 카카오 로그인 URL 생성
+    async fn generate_kakao_login_url(&self, ctx: &Context<'_>) -> Result<KakaoLoginUrl> {
+        let client_id = std::env::var("KAKAO_CLIENT_ID")
+            .map_err(|_| "KAKAO_CLIENT_ID not configured")?;
+        let redirect_uri = std::env::var("KAKAO_REDIRECT_URI")
+            .map_err(|_| "KAKAO_REDIRECT_URI not configured")?;
+        let client_secret = std::env::var("KAKAO_CLIENT_SECRET").ok();
+
+        let kakao_client = KakaoOAuthClient::new(client_id, client_secret, redirect_uri);
+
+        // State 생성 (CSRF 방어)
+        let redis_url = std::env::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let state_manager = StateManager::new(&redis_url)?;
+
+        // IP 주소 가져오기 (프록시 고려)
+        let ip = ctx.data_opt::<String>()
+            .map(|s| s.as_str())
+            .unwrap_or("unknown");
+
+        let state = state_manager.create_state(ip).await?;
+        let url = kakao_client.get_authorization_url(&state);
+
+        Ok(KakaoLoginUrl { url, state })
+    }
+
+    /// 카카오 로그인
+    async fn login_with_kakao(&self, ctx: &Context<'_>, input: KakaoLoginInput) -> Result<AuthPayload> {
+        let pool = ctx.data::<SqlitePool>()?;
+        let session_store = ctx.data::<RedisSessionStore>()?;
+
+        // IP 주소 및 User-Agent 가져오기
+        let ip = ctx.data_opt::<String>()
+            .map(|s| s.as_str())
+            .unwrap_or("unknown");
+        let user_agent = ctx.data_opt::<String>()
+            .map(|s| s.as_str());
+
+        // State 검증 (CSRF 방어)
+        let redis_url = std::env::var("REDIS_URL")
+            .unwrap_or_else(|_| "redis://127.0.0.1:6379".to_string());
+        let state_manager = StateManager::new(&redis_url)?;
+
+        let is_valid = state_manager.verify_and_consume_state(&input.state, ip).await?;
+        if !is_valid {
+            log_failure(pool, None, "kakao_login", Some(ip), user_agent, "Invalid state parameter").await?;
+            return Err("Invalid state parameter (CSRF detected)".into());
+        }
+
+        // 카카오 OAuth 클라이언트 설정
+        let client_id = std::env::var("KAKAO_CLIENT_ID")
+            .map_err(|_| "KAKAO_CLIENT_ID not configured")?;
+        let redirect_uri = std::env::var("KAKAO_REDIRECT_URI")
+            .map_err(|_| "KAKAO_REDIRECT_URI not configured")?;
+        let client_secret = std::env::var("KAKAO_CLIENT_SECRET").ok();
+
+        let kakao_client = KakaoOAuthClient::new(client_id, client_secret, redirect_uri);
+
+        // Authorization Code로 Access Token 교환
+        let token_response = kakao_client.exchange_code(&input.code).await
+            .map_err(|e| {
+                log::error!("Failed to exchange Kakao code: {}", e);
+                "Failed to exchange Kakao authorization code"
+            })?;
+
+        // Access Token으로 사용자 정보 가져오기
+        let kakao_user = kakao_client.get_user_info(&token_response.access_token).await
+            .map_err(|e| {
+                log::error!("Failed to get Kakao user info: {}", e);
+                "Failed to get Kakao user information"
+            })?;
+
+        let kakao_id = kakao_user.id.to_string();
+
+        // 토큰 암호화
+        let encryption_key = std::env::var("OAUTH_ENCRYPTION_KEY")
+            .unwrap_or_else(|_| TokenEncryption::generate_key());
+        let token_encryption = TokenEncryption::new(&encryption_key)?;
+
+        let encrypted_access = token_encryption.encrypt(&token_response.access_token)?;
+        let encrypted_refresh = token_response.refresh_token
+            .as_ref()
+            .map(|t| token_encryption.encrypt(t))
+            .transpose()?;
+
+        // 토큰 만료 시간 계산
+        let expires_at = Utc::now() + chrono::Duration::seconds(token_response.expires_in);
+
+        // 카카오 ID로 기존 사용자 조회
+        let existing_oauth = OAuthProvider::find_by_kakao_id(pool, &kakao_id).await?;
+
+        let (user, is_new_user) = if let Some(oauth) = existing_oauth {
+            // 기존 사용자 - 토큰 업데이트
+            OAuthProvider::update_tokens(
+                pool,
+                oauth.user_id,
+                Some(encrypted_access.clone()),
+                encrypted_refresh.clone(),
+                Some(expires_at),
+            ).await?;
+
+            // 사용자 정보 조회
+            let user: User = sqlx::query_as(
+                "SELECT * FROM users WHERE id = ?"
+            )
+            .bind(oauth.user_id.to_string())
+            .fetch_one(pool)
+            .await?;
+
+            (user, false)
+        } else {
+            // 신규 사용자 - 계정 생성
+            let nickname = kakao_user.kakao_account
+                .as_ref()
+                .and_then(|acc| acc.profile.as_ref())
+                .and_then(|p| p.nickname.as_ref())
+                .or_else(|| kakao_user.properties.as_ref().and_then(|p| p.nickname.as_ref()))
+                .cloned()
+                .unwrap_or_else(|| format!("User{}", &kakao_id[..6]));
+
+            let email = kakao_user.kakao_account
+                .as_ref()
+                .and_then(|acc| acc.email.as_ref())
+                .cloned();
+
+            let profile_image = kakao_user.kakao_account
+                .as_ref()
+                .and_then(|acc| acc.profile.as_ref())
+                .and_then(|p| p.profile_image_url.as_ref())
+                .or_else(|| kakao_user.properties.as_ref().and_then(|p| p.profile_image.as_ref()))
+                .cloned();
+
+            // 초성 추출 (한글 이름의 경우)
+            let initial = nickname.chars().next()
+                .map(|c| c.to_string())
+                .unwrap_or_else(|| "U".to_string());
+
+            let user_id = Uuid::new_v4().to_string();
+            let now = Utc::now();
+
+            // 사용자 생성
+            sqlx::query(
+                r#"
+                INSERT INTO users
+                (id, email, password_hash, name, initial, profile_image, status,
+                 login_method, kakao_id, created_at, updated_at)
+                VALUES (?, ?, NULL, ?, ?, ?, 'ONLINE', 'kakao', ?, ?, ?)
+                "#
+            )
+            .bind(&user_id)
+            .bind(&email)
+            .bind(&nickname)
+            .bind(&initial)
+            .bind(&profile_image)
+            .bind(&kakao_id)
+            .bind(now)
+            .bind(now)
+            .execute(pool)
+            .await?;
+
+            // OAuth 프로바이더 생성
+            let profile_json = serde_json::to_string(&kakao_user).ok();
+            OAuthProvider::create(
+                pool,
+                CreateOAuthProvider {
+                    user_id: user_id.parse::<i64>().unwrap_or(0),
+                    provider: "kakao".to_string(),
+                    provider_user_id: kakao_id.clone(),
+                    access_token: Some(encrypted_access.clone()),
+                    refresh_token: encrypted_refresh.clone(),
+                    token_expires_at: Some(expires_at),
+                    profile_data: profile_json,
+                },
+            ).await?;
+
+            // 사용자 정보 조회
+            let user: User = sqlx::query_as(
+                "SELECT * FROM users WHERE id = ?"
+            )
+            .bind(&user_id)
+            .fetch_one(pool)
+            .await?;
+
+            (user, true)
+        };
+
+        // 세션 생성
+        let session_id = generate_session_id();
+        let session = Session {
+            session_id: session_id.clone(),
+            user_id: user.id.clone(),
+            created_at: Utc::now(),
+        };
+
+        session_store.save_session(&session).await?;
+
+        // JWT 토큰 생성 (하위 호환성)
+        let jwt_secret = std::env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "default_secret".to_string());
+        let token = create_jwt(&user.id, &jwt_secret)?;
+
+        // 감사 로그 기록
+        log_success(
+            pool,
+            Some(user.id.parse::<i64>().unwrap_or(0)),
+            "kakao_login",
+            Some(ip),
+            user_agent,
+        ).await?;
+
+        Ok(AuthPayload {
+            user,
+            token,
+            session_id: Some(session_id),
+            is_new_user: Some(is_new_user),
+        })
     }
 }

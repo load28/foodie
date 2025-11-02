@@ -1,4 +1,5 @@
 pub mod jwt;
+pub mod oauth;
 
 use bcrypt::{hash, verify, DEFAULT_COST};
 
